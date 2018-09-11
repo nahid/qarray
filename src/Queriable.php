@@ -5,7 +5,6 @@ namespace Nahid\QArray;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\FileNotFoundException;
 use Nahid\QArray\Exceptions\InvalidJsonException;
-use Nahid\QArray\Condition;
 
 trait Queriable
 {
@@ -257,39 +256,6 @@ trait Queriable
 
         return $output;
     }
-
-    /**
-     * Read JSON data from file
-     *
-     * @param string $file
-     * @param string $type
-     * @return bool|string|array
-     * @throws FileNotFoundException
-     * @throws InvalidJsonException
-     */
-    protected function getDataFromFile($file, $type = 'application/json')
-    {
-        if (file_exists($file)) {
-            $opts = [
-                'http' => [
-                    'header' => 'Content-Type: '.$type.'; charset=utf-8',
-                ],
-            ];
-
-            $context = stream_context_create($opts);
-            $data = file_get_contents($file, 0, $context);
-            $json = $this->isJson($data, true);
-            
-            if (!$json) {
-                throw new InvalidJsonException();
-            }
-            
-            return $json;
-        }
-
-        throw new FileNotFoundException();
-    }
-
 
 
     /**
