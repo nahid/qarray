@@ -1,0 +1,33 @@
+{
+    "name": "nahid/qarray",
+    "description": "QArray is a PHP abstraction for quering array",
+    "keywords": ["array", "query", "php"],
+    "homepage": "https://github.com/nahid/qarray",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nahid Bin Azhar",
+            "email": "nahid.dns@gmail.com"
+        }
+    ],
+  "require": {
+    "php": ">=5.5.0"
+  },
+  "require-dev": {
+        "phpunit/phpunit": "^4.8 || ^5.0",
+        "symfony/var-dumper": "^3.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "Nahid\\QArray\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Nahid\\JsonQ\\Tests\\": "tests/"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}

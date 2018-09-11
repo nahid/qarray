@@ -1,0 +1,328 @@
+{
+  "basicInformation": {
+    "individualId": 1301072,
+    "firstName": "MICHAEL",
+    "middleName": "BRUCE",
+    "lastName": "RALBY",
+    "sanctions": {
+      "permanentBar": "Y",
+      "sanctionDetails": [
+        {
+          "category": "BAR",
+          "regulator": "FINRA",
+          "messages": [
+            "FINRA_BAR_ALL_MESSAGE"
+          ],
+          "detail": [],
+          "capacity": [
+            "ALL"
+          ]
+        }
+      ]
+    },
+    "otherNames": [],
+    "bcScope": "InActive",
+    "iaScope": "InActive",
+    "daysInIndustry": 12047
+  },
+  "currentEmployments": [],
+  "previousEmployments": [
+    {
+      "firmId": 149777,
+      "firmName": "MORGAN STANLEY",
+      "street1": "595 SOUTH FEDERAL HIGHWAY",
+      "city": "BOCA RATON",
+      "state": "FL",
+      "zipCode": "33432",
+      "registrationBeginDate": "7/1/2013",
+      "registrationEndDate": "1/11/2018",
+      "firmBCScope": "ACTIVE",
+      "firmIAScope": "ACTIVE"
+    },
+    {
+      "firmId": 249,
+      "firmName": "OPPENHEIMER & CO. INC.",
+      "street1": "4855 TECHNOLOGY WAY",
+      "street2": "SUITE 400",
+      "city": "BOCA RATON",
+      "state": "FL",
+      "zipCode": "33431",
+      "registrationBeginDate": "3/20/2009",
+      "registrationEndDate": "7/15/2013",
+      "firmBCScope": "ACTIVE",
+      "firmIAScope": "ACTIVE"
+    },
+    {
+      "firmId": 39285,
+      "firmName": "STANFORD GROUP COMPANY",
+      "street1": "5200 TOWN CENTER CIRCLE STE 308",
+      "city": "BOCA RATON",
+      "state": "FL",
+      "zipCode": "33486",
+      "registrationBeginDate": "3/15/2005",
+      "registrationEndDate": "3/16/2009",
+      "firmBCScope": "ACTIVE",
+      "firmIAScope": "ACTIVE"
+    },
+    {
+      "firmId": 7461,
+      "firmName": "FSC SECURITIES CORPORATION",
+      "street1": "2300 WINDY RIDGE PKWY",
+      "street2": "SUITE 1100",
+      "city": "ATLANTA",
+      "state": "GA",
+      "country": "UNITED STATES",
+      "zipCode": "30339",
+      "registrationBeginDate": "1/7/2002",
+      "registrationEndDate": "4/6/2005",
+      "firmBCScope": "ACTIVE",
+      "firmIAScope": "ACTIVE"
+    },
+    {
+      "firmId": 11025,
+      "firmName": "FIRST UNION SECURITIES FINANCIAL NETWORK, INC.",
+      "street1": "ONE NORTH JEFFERSON AVENUE",
+      "street2": "H0004-05B",
+      "city": "ST. LOUIS",
+      "state": "MO",
+      "country": "UNITED STATES",
+      "zipCode": "63103",
+      "registrationBeginDate": "9/22/1998",
+      "registrationEndDate": "12/31/2001",
+      "firmBCScope": "ACTIVE",
+      "firmIAScope": "ACTIVE"
+    },
+    {
+      "firmId": 33832,
+      "firmName": "JWGENESIS SECURITIES, INC.",
+      "street1": "980 N. FEDERAL HIGHWAY",
+      "street2": "SUITE 210",
+      "city": "BOCA RATON",
+      "state": "FL",
+      "country": "UNITED STATES",
+      "zipCode": "33432",
+      "registrationBeginDate": "7/1/1999",
+      "registrationEndDate": "1/2/2001",
+      "firmBCScope": "INACTIVE",
+      "firmIAScope": "NOTINSCOPE"
+    },
+    {
+      "firmId": 23595,
+      "firmName": "D.E. FREY & COMPANY, INC.",
+      "street1": "1700 LINCOLN ST., SUITE 2200",
+      "city": "DENVER",
+      "state": "CO",
+      "country": "UNITED STATES",
+      "zipCode": "80203",
+      "registrationBeginDate": "9/28/1995",
+      "registrationEndDate": "8/31/1998",
+      "firmBCScope": "INACTIVE",
+      "firmIAScope": "NOTINSCOPE"
+    },
+    {
+      "firmId": 7059,
+      "firmName": "SMITH BARNEY INC.",
+      "street1": "390 - 388 GREENWICH STREET",
+      "city": "NEW YORK",
+      "state": "NY",
+      "country": "UNITED STATES",
+      "zipCode": "10013-2396",
+      "registrationBeginDate": "5/31/1990",
+      "registrationEndDate": "10/6/1995",
+      "firmBCScope": "ACTIVE",
+      "firmIAScope": "ACTIVE"
+    },
+    {
+      "firmId": 7793,
+      "firmName": "FIRST MIAMI SECURITIES, INC.",
+      "street1": "4775 TECHNOLOGY WAY",
+      "city": "BOCA RATON",
+      "state": "FL",
+      "country": "UNITED STATES",
+      "zipCode": "33431",
+      "registrationBeginDate": "12/19/1984",
+      "registrationEndDate": "6/6/1990",
+      "firmBCScope": "ACTIVE",
+      "firmIAScope": "NOTINSCOPE"
+    }
+  ],
+  "disclosureFlag": "Y",
+  "iaDisclosureFlag": "Y",
+  "disclosures": [
+    {
+      "eventDate": "7/3/2018",
+      "disclosureType": "Customer Dispute",
+      "disclosureResolution": "Pending",
+      "disclosureDetail": {
+        "Allegations": "CLIENT AND HIS ATTORNEY ALLEGE UNSUITABILITY WITH RESPECT TO PURCHASE OF STRUCTURED PRODUCTS - MARCH 2016 - AUGUST 2016.",
+        "Damage Amount Requested": "$37,170.40",
+        "DisplayAAOLinkIfExists": "N",
+        "arbitrationClaimFiledDetail": "",
+        "arbitrationDocketNumber": ""
+      }
+    },
+    {
+      "eventDate": "6/8/2018",
+      "disclosureType": "Customer Dispute",
+      "disclosureResolution": "Pending",
+      "disclosureDetail": {
+        "Allegations": "Client alleges unsuitability, inter alia, with respect to investments  October 2013 - December 2017.  Damages unspecified.",
+        "DisplayAAOLinkIfExists": "N",
+        "arbitrationClaimFiledDetail": "",
+        "arbitrationDocketNumber": ""
+      }
+    },
+    {
+      "eventDate": "3/5/2018",
+      "disclosureType": "Regulatory",
+      "disclosureResolution": "Final",
+      "disclosureDetail": {
+        "DocketNumberFDA": "2017053976201",
+        "DocketNumberAAO": "2017053976201",
+        "Initiated By": "FINRA",
+        "Allegations": "Without admitting or denying the findings, Ralby consented to the sanction and to the entry of findings that he refused to appear for a FINRA on-the-record testimony in connection with its investigation into whether Ralby had accepted loans from a customer in violation of FINRA rules.",
+        "Resolution": "Acceptance, Waiver & Consent(AWC)",
+        "SanctionDetails": [
+          {
+            "Sanctions": "Bar (Permanent)",
+            "SanctionDetails": [
+              {
+                "Registration Capacities Affected": "All capacities",
+                "Duration": "Indefinite",
+                "Start Date": "3/5/2018"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "eventDate": "9/28/2017",
+      "disclosureType": "Customer Dispute",
+      "disclosureResolution": "Denied",
+      "disclosureDetail": {
+        "Allegations": "CLIENT ALLEGES UNSUITABILITY, INTER ALIA, WITH RESPECT TO INVESTMENTS - JULY 2016 - JANUARY 2017. DAMAGES UNSPECIFIED.",
+        "DisplayAAOLinkIfExists": "N",
+        "arbitrationClaimFiledDetail": "",
+        "arbitrationDocketNumber": ""
+      }
+    },
+    {
+      "eventDate": "1/12/2017",
+      "disclosureType": "Customer Dispute",
+      "disclosureResolution": "Settled",
+      "disclosureDetail": {
+        "Allegations": "CLIENT ALLEGES UNAUTHORIZED TRADING, ITER ALIA, JULY 2013 - DECEMBER 2016. DAMAGES UNSPECIFIED.",
+        "Settlement Amount": "$35,450.00",
+        "DisplayAAOLinkIfExists": "N",
+        "arbitrationClaimFiledDetail": "",
+        "arbitrationDocketNumber": ""
+      }
+    },
+    {
+      "eventDate": "9/30/2014",
+      "disclosureType": "Customer Dispute",
+      "disclosureResolution": "Award / Judgment",
+      "disclosureDetail": {
+        "Allegations": "PLANTIFFS ALLEGE CIVIL CONSPIRACY AND  WILLFULL STATUTORY VIOLATION OF FLORIDA STATUTES SECTION 627.4137.  ALLEGED COMPENSATORY DAMAGE AMOUNT IS UNDETERMINED.",
+        "Damages Granted": "$2,205,748.73",
+        "DisplayAAOLinkIfExists": "N",
+        "arbitrationClaimFiledDetail": "",
+        "arbitrationDocketNumber": "",
+        "Broker Comment": "THIS MATTER ARISES OUT OF A BITTER ESTATE BATTLE BETWEEN THE NATURAL CHILDREN OF A FORMER CUSTOMER OF MR. RALBY'S WHO IS NOW DECEASED AND THAT CUSTOMER'S SECOND WIFE.   THE  NATURAL CHILDREN, WHO WERE NEVER CUSTOMERS OF MR. RALBY AND TO WHOM HE OWED NO FIDUCIARY OR OTHER DUTY OF CARE, FILED THIS ACTION CHALLENGING CERTAIN PRE-DEATH TRANSFERS MADE BY THE DECEDENT THAT WERE MADE FOR THE BENEFIT OF THE SECOND WIFE.  MR. RALBY IS NOT ALLEGED TO HAVE BENEFITED IN ANY WAY FROM THE TRANSFERS.  MR. RALBY SECURED THE DISMISSAL OF THE FIRST AMENDED COMPLAINT AND IS SEEKING THE DISMISSAL OF THE SECOND AMENDED COMPLAINT AND EXPUNGEMENT."
+      }
+    },
+    {
+      "eventDate": "4/4/2010",
+      "disclosureType": "Customer Dispute",
+      "disclosureResolution": "Pending",
+      "disclosureDetail": {
+        "Allegations": "CUSTOMER ALLEGES BEING MISLED REGARDING THE RISK LEVEL OF HIS PURCHASE OF THE STANFORD INTERNATIONAL BANK CD.",
+        "Damage Amount Requested": "$587,698.00",
+        "DisplayAAOLinkIfExists": "N",
+        "arbitrationClaimFiledDetail": "",
+        "arbitrationDocketNumber": "",
+        "Broker Comment": "THE COMPLAINT WAS FILED IN ERROR BY THE CUSTOMER WHO INDICATED THAT IT WAS A MISTAKE AND THAT NO CLAIM WAS INTENDED TO BE ASSERTED AGAINST FA.  FA WILL BE SEEKING EXPUNGEMENT WITH THE COOPERATION OF THE CUSTOMER."
+      }
+    },
+    {
+      "eventDate": "8/26/2009",
+      "disclosureType": "Civil",
+      "disclosureResolution": "Pending",
+      "disclosureDetail": {
+        "Initiated By": "RALPH S. JANVEY, RECEIVER",
+        "Allegations": "RALBY IS ALLEGED TO HAVE RECEIVED FINANCIAL REMUNERATION FROM STANFORD",
+        "SanctionDetails": [],
+        "Broker Comment": "THIS ACTION DOES NOT INVOLVE A CUSTOMER COMPLAINT. THE STANFORD RECEIVER SEEKS TO RECOVER COMPENSATION PAID TO FORMER STANFORD FINANICAL ADVISORS."
+      }
+    },
+    {
+      "eventDate": "4/8/2009",
+      "disclosureType": "Customer Dispute",
+      "disclosureResolution": "Pending",
+      "disclosureDetail": {
+        "Allegations": "CUSTOMER ALLEGES BEING MISLED REGARDING THE RISK LEVEL OF HIS PURCHASE OF THE STANFORD INTERNATIONAL BANK CD.",
+        "Damage Amount Requested": "$728,419.00",
+        "DisplayAAOLinkIfExists": "N",
+        "arbitrationClaimFiledDetail": "",
+        "arbitrationDocketNumber": "",
+        "Broker Comment": "THE COMPLAINT WAS FILED IN ERROR BY THE CUSTOMER WHO INDICATED THAT IT WAS A MISTAKE AND THAT NO CLAIM WAS INTENDED TO BE ASSERTED AGAINST FA.  FA WILL BE SEEKING EXPUNGEMENT WITH THE COOPERATION OF THE CUSTOMER."
+      }
+    },
+    {
+      "eventDate": "7/25/1999",
+      "disclosureType": "Customer Dispute",
+      "disclosureResolution": "Denied",
+      "disclosureDetail": {
+        "Allegations": "UNSUITABILITY",
+        "Damage Amount Requested": "$30,000.00",
+        "DisplayAAOLinkIfExists": "N",
+        "arbitrationClaimFiledDetail": "",
+        "arbitrationDocketNumber": ""
+      }
+    }
+  ],
+  "examsCount": {
+    "stateExamCount": 2,
+    "principalExamCount": 1,
+    "productExamCount": 1
+  },
+  "stateExamCategory": [
+    {
+      "examCategory": "Series 66",
+      "examName": "Uniform Combined State Law Examination",
+      "examTakenDate": "5/30/2000"
+    },
+    {
+      "examCategory": "Series 63",
+      "examName": "Uniform Securities Agent State Law Examination",
+      "examTakenDate": "2/26/1993"
+    }
+  ],
+  "principalExamCategory": [
+    {
+      "examCategory": "Series 24",
+      "examName": "General Securities Principal Examination",
+      "examTakenDate": "8/30/1996"
+    }
+  ],
+  "productExamCategory": [
+    {
+      "examCategory": "Series 7",
+      "examName": "General Securities Representative Examination",
+      "examTakenDate": "12/15/1984"
+    }
+  ],
+  "registrationCount": {
+    "approvedSRORegistrationCount": 0,
+    "approvedFinraRegistrationCount": 0,
+    "approvedStateRegistrationCount": 0
+  },
+  "registeredStates": [],
+  "registeredSROs": [],
+  "brokerDetails": {
+    "hasBCComments": "N",
+    "hasIAComments": "N",
+    "legacyReportStatusDescription": "Not Requested"
+  }
+}
