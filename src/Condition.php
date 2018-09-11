@@ -1,4 +1,4 @@
-<?php declare(strict_types = 1);
+<?php
 
 namespace Nahid\QArray;
 
@@ -12,7 +12,7 @@ class Condition
      *
      * @return bool
      */
-    public static function equal($value, $comparable):bool
+    public static function equal($value, $comparable)
     {
         return $value == $comparable;
     }
@@ -25,7 +25,7 @@ class Condition
      *
      * @return bool
      */
-    public static function strictEqual($value, $comparable):bool
+    public static function strictEqual($value, $comparable)
     {
         return $value === $comparable;
     }
@@ -38,7 +38,7 @@ class Condition
      *
      * @return bool
      */
-    public static function notEqual($value, $comparable):bool
+    public static function notEqual($value, $comparable)
     {
         return $value != $comparable;
     }
@@ -51,7 +51,7 @@ class Condition
      *
      * @return bool
      */
-    public static function strictNotEqual($value, $comparable):bool
+    public static function strictNotEqual($value, $comparable)
     {
         return $value !== $comparable;
     }
@@ -64,7 +64,7 @@ class Condition
      *
      * @return bool
      */
-    public static function greaterThan($value, $comparable):bool
+    public static function greaterThan($value, $comparable)
     {
         return $value > $comparable;
     }
@@ -77,7 +77,7 @@ class Condition
      * 
      * @return bool
      */
-    public static function lessThan($value, $comparable):bool
+    public static function lessThan($value, $comparable)
     {
         return $value < $comparable;
     }
@@ -90,7 +90,7 @@ class Condition
      *
      * @return bool
      */
-    public static function greaterThanOrEqual($value, $comparable):bool
+    public static function greaterThanOrEqual($value, $comparable)
     {
         return $value >= $comparable;
     }
@@ -103,7 +103,7 @@ class Condition
      *
      * @return bool
      */
-    public static function lessThanOrEqual($value, $comparable):bool
+    public static function lessThanOrEqual($value, $comparable)
     {
         return $value <= $comparable;
     }
@@ -116,7 +116,7 @@ class Condition
      *
      * @return bool
      */
-    public static function in($value, $comparable):bool
+    public static function in($value, $comparable)
     {
         return (is_array($comparable) && in_array($value, $comparable));
     }
@@ -129,7 +129,7 @@ class Condition
      *
      * @return bool
      */
-    public static function notIn($value, $comparable):bool
+    public static function notIn($value, $comparable)
     {
         return (is_array($comparable) && !in_array($value, $comparable));
     }
@@ -141,7 +141,7 @@ class Condition
      *
      * @return bool
      */
-    public static function isNull($value, $comparable):bool
+    public static function isNull($value, $comparable)
     {
         return is_null($value);
     }
@@ -153,7 +153,7 @@ class Condition
      *
      * @return bool
      */
-    public static function isNotNull($value, $comparable):bool
+    public static function isNotNull($value, $comparable)
     {
         return !is_null($value);
     }
@@ -166,7 +166,7 @@ class Condition
      *
      * @return bool
      */
-    public static function startWith($value, $comparable):bool
+    public static function startWith($value, $comparable)
     {
         if (is_array($comparable) || is_array($value) || is_object($comparable) || is_object($value)) {
             return false;
@@ -187,7 +187,7 @@ class Condition
      *
      * @return bool
      */
-    public static function endWith($value, $comparable):bool
+    public static function endWith($value, $comparable)
     {
         if (is_array($comparable) || is_array($value) || is_object($comparable) || is_object($value)) {
             return false;
@@ -208,7 +208,7 @@ class Condition
      *
      * @return bool
      */
-    public static function match($value, $comparable):bool
+    public static function match($value, $comparable)
     {
         if (is_array($comparable) || is_array($value) || is_object($comparable) || is_object($value)) {
             return false;
@@ -231,7 +231,7 @@ class Condition
      *
      * @return bool
      */
-    public static function contains($value, $comparable):bool
+    public static function contains($value, $comparable)
     {
         return (strpos($value, $comparable) !== false);
     }
@@ -244,7 +244,7 @@ class Condition
      *
      * @return bool
      */
-    public static function dateEqual($value, $comparable, $format = 'Y-m-d'):bool
+    public static function dateEqual($value, $comparable, $format = 'Y-m-d')
     {
         $date = date($format, strtotime($value));
         return $date == $comparable;
@@ -258,7 +258,7 @@ class Condition
      *
      * @return bool
      */
-    public static function monthEqual($value, $comparable):bool
+    public static function monthEqual($value, $comparable)
     {
         $month = date('m', strtotime($value));
         return $month == $comparable;
@@ -272,7 +272,7 @@ class Condition
      *
      * @return bool
      */
-    public static function yearEqual($value, $comparable):bool
+    public static function yearEqual($value, $comparable)
     {
         $year = date('Y', strtotime($value));
         return $year == $comparable;
