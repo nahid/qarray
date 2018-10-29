@@ -9,6 +9,9 @@ abstract class AbstractQuery implements \Countable, \Iterator
 {
     use Queriable;
 
+    protected $_offset = 0;
+    protected $_take = null;
+
     /**
      * this constructor set main json file path
      * otherwise create it and read file contents
@@ -101,6 +104,8 @@ abstract class AbstractQuery implements \Countable, \Iterator
         $this->_node = '';
         $this->_except = [];
         $this->_conditions = [];
+        $this->_take = null;
+        $this->_offset = 0;
 
         return $this;
     }
@@ -194,6 +199,20 @@ abstract class AbstractQuery implements \Countable, \Iterator
     public function fetch($column = [])
     {
         return $this->get($column);
+    }
+
+    public function offset($offset)
+    {
+        $this->_offset = $offset;
+
+        return $this;
+    }
+
+    public function take($take)
+    {
+        $this->_take = $take;
+
+        return $this;
     }
 
     /**

@@ -266,6 +266,10 @@ trait Queriable
             return $this->instanceWithValue($data);
         }
 
+        if (!is_null($this->_take)) {
+            $data = array_slice($data, $this->_offset, $this->_take);
+        }
+
         if ($this->isMultiArray($data)) {
             foreach ($data as $key => $val) {
                 $output[$key] = $this->instanceWithValue($val);
