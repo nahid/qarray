@@ -21,9 +21,9 @@ abstract class AbstractQuery implements \Countable, \Iterator
      */
     public function __construct($data = null)
     {
-        if (is_file($data)) {
+        if (is_file($data) || filter_var($data, FILTER_VALIDATE_URL)) {
             if (file_exists($data)) {
-                $this->collect($this->readFile($data));
+                $this->collect($this->readPath($data));
             }
         } else {
             $this->collect($this->parseData($data));
@@ -34,7 +34,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
      * @param string $file
      * @return array
      */
-    public abstract function readFile($file);
+    public abstract function readPath($file);
 
     /**
      * @param string $data
@@ -95,17 +95,31 @@ abstract class AbstractQuery implements \Countable, \Iterator
         return clone $this;
     }
 
-    protected function fresh()
+    /**
+     * @param array $props
+     * @return $this
+     */
+    protected function fresh($props = [])
     {
-        $this->_map = [];
-        $this->_baseContents = [];
-        $this->_select = [];
-        $this->_isProcessed = false;
-        $this->_node = '';
-        $this->_except = [];
-        $this->_conditions = [];
-        $this->_take = null;
-        $this->_offset = 0;
+        $properties = [
+            '_map'  => [],
+            '_baseContents' => [],
+            '_select' => [],
+            '_isProcessed' => false,
+            '_node' => '',
+            '_except' => [],
+            '_conditions' => [],
+            '_take' => null,
+            '_offset' => 0,
+        ];
+
+        foreach ($properties as $property=>$value) {
+            if (isset($props[$property])) {
+                $value = $props[$property];
+            }
+
+            $this->$property = $value;
+        }
 
         return $this;
     }

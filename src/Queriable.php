@@ -272,11 +272,11 @@ trait Queriable
 
         if ($this->isMultiArray($data)) {
             foreach ($data as $key => $val) {
-                $output[$key] = $this->instanceWithValue($val);
+                $output[$key] = $this->instanceWithValue($val, ['_select' => $this->_select, '_except' => $this->_except]);
             }
         } else {
             $value = json_decode(json_encode($this->takeColumn($data)), true);
-            $output = $this->instanceWithValue($value);
+            $output = $this->instanceWithValue($value, ['_select' => $this->_select, '_except' => $this->_except]);
         }
 
         $this->_map = $output;
@@ -284,9 +284,10 @@ trait Queriable
         return $this;
     }
 
-    protected function instanceWithValue($value)
+    protected function instanceWithValue($value, $meta = [])
     {
-        $instance = $this->copy(true);
+        $this->fresh($meta);
+        $instance = $this->copy();
         $value = $instance->takeColumn($value);
         return $instance->collect($value);
     }
