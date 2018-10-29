@@ -263,23 +263,28 @@ trait Queriable
         $output = [];
 
         if (is_null($data) || is_scalar($data)) {
-            return $data;
+            return $this->instanceWithValue($data);
         }
 
         if ($this->isMultiArray($data)) {
             foreach ($data as $key => $val) {
-                $instance = $this->copy(true);
-                $val = $instance->takeColumn($val);
-                $instance = $instance->collect($val);
-                $output[$key] = $instance;
+                $output[$key] = $this->instanceWithValue($val);
             }
         } else {
-            $output = json_decode(json_encode($this->takeColumn($data)), true);
+            $value = json_decode(json_encode($this->takeColumn($data)), true);
+            $output = $this->instanceWithValue($value);
         }
 
         $this->_map = $output;
 
         return $this;
+    }
+
+    protected function instanceWithValue($value)
+    {
+        $instance = $this->copy(true);
+        $value = $instance->takeColumn($value);
+        return $instance->collect($value);
     }
 
     /**

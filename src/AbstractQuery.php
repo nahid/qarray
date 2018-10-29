@@ -27,9 +27,17 @@ abstract class AbstractQuery implements \Countable, \Iterator
         }
     }
 
-    public abstract function readFile(string $file) : array;
+    /**
+     * @param string $file
+     * @return array
+     */
+    public abstract function readFile($file);
 
-    public abstract function parseData(string $data) : array;
+    /**
+     * @param string $data
+     * @return array
+     */
+    public abstract function parseData($data);
 
     /**
      * @param $key
