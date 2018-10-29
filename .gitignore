@@ -3,3 +3,6 @@ vendor
 .DS_Store
 .php_cs.cache
 composer.lock
+index.php
+data.json
+src/JsonBuilder.php

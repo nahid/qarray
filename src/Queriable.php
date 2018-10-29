@@ -5,6 +5,7 @@ namespace Nahid\QArray;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\FileNotFoundException;
 use Nahid\QArray\Exceptions\InvalidJsonException;
+use Nahid\QArray\ValueNotFound;
 
 trait Queriable
 {
@@ -87,16 +88,24 @@ trait Queriable
 
 
     /**
-     * File read data from interface
+     * import data from file
      *
-     * @param FileIOInterface
+     * @param string|null $file
      * @return bool
+     * @throws FileNotFoundException
+     * @throws InvalidJsonException
      */
-    public function file(FileIOInterface $file)
+    public function import($file = null)
     {
-        $this->_map = $file->getData();
-        $this->_baseContents = $this->_map;
-        return true;
+        if (!is_null($file)) {
+            if (is_string($file) && file_exists($file)) {
+                $this->_map = $this->getDataFromFile($file);
+                $this->_baseContents = $this->_map;
+                return true;
+            }
+        }
+
+        throw new FileNotFoundException();
     }
 
     /**
@@ -123,6 +132,18 @@ trait Queriable
 
         $this->_isProcessed = true;
         $this->_map = $this->objectToArray($this->getData());
+        return $this;
+    }
+
+    /**
+     * Our system will cache processed data and prevend multiple time processing. If
+     * you want to reprocess this method can help you
+     *
+     * @return $this
+     */
+    public function reProcess()
+    {
+        $this->_isProcessed = false;
         return $this;
     }
 
@@ -171,7 +192,7 @@ trait Queriable
      *
      * @param string $value
      * @param bool $isReturnMap
-     * 
+     *
      * @return bool|array
      */
     public function isJson($value, $isReturnMap = false)
@@ -179,13 +200,13 @@ trait Queriable
         if (is_array($value) || is_object($value)) {
             return false;
         }
-        
+
         $data = json_decode($value, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             return false;
         }
-        
+
         return $isReturnMap ? $data : true;
     }
 
@@ -257,6 +278,39 @@ trait Queriable
         return $output;
     }
 
+    /**
+     * Read JSON data from file
+     *
+     * @param string $file
+     * @param string $type
+     * @return bool|string|array
+     * @throws FileNotFoundException
+     * @throws InvalidJsonException
+     */
+    protected function getDataFromFile($file, $type = 'application/json')
+    {
+        if (file_exists($file)) {
+            $opts = [
+                'http' => [
+                    'header' => 'Content-Type: '.$type.'; charset=utf-8',
+                ],
+            ];
+
+            $context = stream_context_create($opts);
+            $data = file_get_contents($file, 0, $context);
+            $json = $this->isJson($data, true);
+
+            if (!$json) {
+                throw new InvalidJsonException();
+            }
+
+            return $json;
+        }
+
+        throw new FileNotFoundException();
+    }
+
+
 
     /**
      * Get data from nested array
@@ -285,13 +339,13 @@ trait Queriable
             }
 
             if ($terminate) {
-                return false;
+                return new ValueNotFound();
             }
 
             return $map;
         }
 
-        return false;
+        return new ValueNotFound();
     }
 
     /**
@@ -324,12 +378,12 @@ trait Queriable
                         if (!method_exists(Condition::class, $function)) {
                             throw new ConditionNotAllowedException("Exception: $function condition not allowed");
                         }
-                        
+
                         $function = [Condition::class, $function];
                     }
-                    
+
                     $value = $this->getFromNested($val, $rule['key']);
-                    $return = $value === null || $value ? call_user_func_array($function, [$value, $rule['value']]) : false;
+                    $return = $value instanceof ValueNotFound ? false :  call_user_func_array($function, [$value, $rule['value']]);
                     $tmp &= $return;
                 }
                 $res |= $tmp;
@@ -445,6 +499,21 @@ trait Queriable
     public function whereNull($key = null)
     {
         $this->where($key, 'null', 'null');
+        return $this;
+    }
+
+
+    /**
+     * make WHERE Boolean clause
+     *
+     * @param string $key
+     * @return $this
+     */
+    public function whereBool($key = null, $value)
+    {
+        if (is_bool($value)) {
+            $this->where($key, '==', $value);
+        }
         return $this;
     }
 

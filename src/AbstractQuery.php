@@ -5,7 +5,7 @@ namespace Nahid\QArray;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\NullValueException;
 
-class Query
+abstract class AbstractQuery
 {
     use Queriable;
 
@@ -14,19 +14,26 @@ class Query
      * otherwise create it and read file contents
      * and decode as an array and store it in $this->_data
      *
-     * @param FileIOInterface
+     * @param string $file
      */
-    public function __construct(FileIOInterface $file = null)
+    public function __construct(string $file)
     {
-        if (!is_null($file)) {
-            $this->file($file);
+        if (file_exists($file)) {
+            $data = $this->readFile($file);
+
+            $this->readFromArray($data);
         }
+
     }
+
+    public abstract function readFile(string $file) : array;
+
+    public abstract function parseData(string $data) : AbstractQuery;
 
     /**
      * Deep copy current instance
      *
-     * @return Query
+     * @return AbstractQuery
      */
     public function copy()
     {
@@ -34,7 +41,7 @@ class Query
     }
 
     /**
-     * Set node path, where QArray start to prepare
+     * Set node path, where JsonQ start to prepare
      *
      * @param null $node
      * @return $this
@@ -140,15 +147,24 @@ class Query
      * reset given data to the $_map
      *
      * @param mixed $data
-     * @return Query
+     * @param bool $instance
+     * @return AbstractQuery
      */
-    public function reset($data = null)
+    public function reset($data = null, $instance = false)
     {
         if (!is_null($data)) {
             $this->_baseContents = $data;
         }
 
+        if ($instance) {
+            $self = clone $this;
+            $self->collect($this->_baseContents);
+
+            return $self;
+        }
+
         $this->_map = $this->_baseContents;
+        $this->reProcess();
 
         return $this;
     }
@@ -419,7 +435,7 @@ class Query
      * Sort an array value
      *
      * @param string $order
-     * @return Query
+     * @return Jsonq
      */
     public function sort($order = 'asc')
     {
@@ -533,7 +549,7 @@ class Query
      * then method set position of working data
      *
      * @param string $node
-     * @return Query
+     * @return AbstractQuery
      * @throws NullValueException
      * @throws ConditionNotAllowedException
      */
@@ -547,10 +563,22 @@ class Query
     }
 
     /**
+     * @param array $data
+     * @return $this
+     */
+    public function readFromArray(array $data)
+    {
+        $this->_map = $data;
+        $this->_baseContents = $data;
+
+        return $this;
+    }
+
+    /**
      * import raw JSON data for process
      *
      * @param string $data
-     * @return Query
+     * @return AbstractQuery
      */
     public function json($data)
     {
@@ -567,7 +595,7 @@ class Query
      * import parsed data from raw json
      *
      * @param array|object $data
-     * @return Query
+     * @return AbstractQuery
      */
     public function collect($data)
     {
