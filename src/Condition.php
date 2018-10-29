@@ -277,4 +277,18 @@ class Condition
         $year = date('Y', strtotime($value));
         return $year == $comparable;
     }
+
+
+    /**
+     * is given value instance of value
+     *
+     * @param string $value
+     * @param string $comparable
+     *
+     * @return bool
+     */
+    public function instance($value, $comparable)
+    {
+        return $value instanceof $comparable;
+    }
 }

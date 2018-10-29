@@ -89,6 +89,7 @@ trait Queriable
         'dates' => 'dateEqual',
         'month' => 'monthEqual',
         'year' => 'yearEqual',
+        'instance'  => 'instance',
     ];
 
 
@@ -666,6 +667,20 @@ trait Queriable
     public function whereYear($key, $value)
     {
         $this->where($key, 'year', $value);
+
+        return $this;
+    }
+
+    /**
+     * make WHERE Instance clause
+     *
+     * @param string $key
+     * @param object|string $object
+     * @return $this
+     */
+    public function whereInstance($key, $object)
+    {
+        $this->where($key, 'instance', $object);
 
         return $this;
     }
