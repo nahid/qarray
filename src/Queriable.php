@@ -258,7 +258,7 @@ trait Queriable
      * @param bool $isObject
      * @return array|mixed
      */
-    protected function prepareResult($data, $isObject)
+    protected function prepareResult($data)
     {
         $output = [];
 
@@ -268,14 +268,18 @@ trait Queriable
 
         if ($this->isMultiArray($data)) {
             foreach ($data as $key => $val) {
-                $val = $this->takeColumn($val);
-                $output[$key] = $isObject ? (object) $val : $val;
+                $instance = $this->copy(true);
+                $val = $instance->takeColumn($val);
+                $instance = $instance->collect($val);
+                $output[$key] = $instance;
             }
         } else {
-            $output = json_decode(json_encode($this->takeColumn($data)), $isObject);
+            $output = json_decode(json_encode($this->takeColumn($data)), true);
         }
 
-        return $output;
+        $this->_map = $output;
+
+        return $this;
     }
 
     /**

@@ -5,7 +5,7 @@ namespace Nahid\QArray;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\NullValueException;
 
-abstract class AbstractQuery
+abstract class AbstractQuery implements \Countable, \Iterator
 {
     use Queriable;
 
@@ -14,30 +14,87 @@ abstract class AbstractQuery
      * otherwise create it and read file contents
      * and decode as an array and store it in $this->_data
      *
-     * @param string $file
+     * @param string $data
      */
-    public function __construct(string $file)
+    public function __construct($data = null)
     {
-        if (file_exists($file)) {
-            $data = $this->readFile($file);
-
-            $this->readFromArray($data);
+        if (is_file($data)) {
+            if (file_exists($data)) {
+                $this->collect($this->readFile($data));
+            }
+        } else {
+            $this->collect($this->parseData($data));
         }
-
     }
 
     public abstract function readFile(string $file) : array;
 
-    public abstract function parseData(string $data) : AbstractQuery;
+    public abstract function parseData(string $data) : array;
+
+    /**
+     * @param $key
+     * @return mixed
+     * @throws NullValueException
+     */
+    public function __get($key)
+    {
+        if (isset($this->_map[$key]) or is_null($this->_map[$key])) {
+            return $this->_map[$key];
+        }
+
+        throw new NullValueException();
+    }
+
+    public function rewind()
+    {
+        return reset($this->_map);
+    }
+
+    public function current()
+    {
+        return current($this->_map);
+    }
+
+    public function key()
+    {
+        return key($this->_map);
+    }
+    public function next()
+    {
+        return next($this->_map);
+    }
+
+    public function valid()
+    {
+        return key($this->_map) !== null;
+    }
 
     /**
      * Deep copy current instance
      *
+     * @param bool $fresh
      * @return AbstractQuery
      */
-    public function copy()
+    public function copy($fresh = false)
     {
+        if ($fresh) {
+            $this->fresh();
+        }
+
         return clone $this;
+    }
+
+    protected function fresh()
+    {
+        $this->_map = [];
+        $this->_baseContents = [];
+        $this->_select = [];
+        $this->_isProcessed = false;
+        $this->_node = '';
+        $this->_except = [];
+        $this->_conditions = [];
+
+        return $this;
     }
 
     /**
@@ -107,27 +164,28 @@ abstract class AbstractQuery
     /**
      * getting prepared data
      *
-     * @param bool $object
-     * @return array|object
+     * @param array $column
+     * @return AbstractQuery
      * @throws ConditionNotAllowedException
      */
-    public function get($object = false)
+    public function get($column = [])
     {
+        $this->_select = $column;
         $this->prepare();
 
-        return $this->prepareResult($this->_map, $object);
+        return $this->prepareResult($this->_map);
     }
 
     /**
      * alias of get method
      *
-     * @param bool $object
+     * @param array $column
      * @return array|object
      * @throws ConditionNotAllowedException
      */
-    public function fetch($object = true)
+    public function fetch($column = [])
     {
-        return $this->get($object);
+        return $this->get($column);
     }
 
     /**
@@ -147,17 +205,17 @@ abstract class AbstractQuery
      * reset given data to the $_map
      *
      * @param mixed $data
-     * @param bool $instance
+     * @param bool $fresh
      * @return AbstractQuery
      */
-    public function reset($data = null, $instance = false)
+    public function reset($data = null, $fresh = false)
     {
         if (!is_null($data)) {
             $this->_baseContents = $data;
         }
 
-        if ($instance) {
-            $self = clone $this;
+        if ($fresh) {
+            $self = $this->copy($fresh);
             $self->collect($this->_baseContents);
 
             return $self;
@@ -248,12 +306,13 @@ abstract class AbstractQuery
     public function sum($column = null)
     {
         $this->prepare();
+        $data = $this->toArray();
 
         $sum = 0;
         if (is_null($column)) {
-            $sum = array_sum($this->_map);
+            $sum = array_sum($data);
         } else {
-            foreach ($this->_map as $key => $val) {
+            foreach ($data as $key => $val) {
                 $value = $this->getFromNested($val, $column);
                 if (is_scalar($value)) {
                     $sum += $value;
@@ -275,11 +334,11 @@ abstract class AbstractQuery
     public function max($column = null)
     {
         $this->prepare();
-
+        $data = $this->toArray();
         if (is_null($column)) {
-            $max = max($this->_map);
+            $max = max($data);
         } else {
-            $max = max(array_column($this->_map, $column));
+            $max = max(array_column($data, $column));
         }
 
         return $max;
@@ -295,11 +354,12 @@ abstract class AbstractQuery
     public function min($column = null)
     {
         $this->prepare();
+        $data = $this->toArray();
 
         if (is_null($column)) {
-            $min = min($this->_map);
+            $min = min($data);
         } else {
-            $min = min(array_column($this->_map, $column));
+            $min = min(array_column($data, $column));
         }
 
         return $min;
@@ -325,17 +385,19 @@ abstract class AbstractQuery
     /**
      * getting first element of prepared data
      *
-     * @param bool $object
+     * @param array $column
      * @return object|array|null
      * @throws ConditionNotAllowedException
      */
-    public function first($object = false)
+    public function first($column = [])
     {
         $this->prepare();
 
         $data = $this->_map;
+        $this->_select = $column;
+
         if (count($data) > 0) {
-            return $this->prepareResult(reset($data), $object);
+            return $this->prepareResult(reset($data));
         }
 
         return null;
@@ -344,17 +406,19 @@ abstract class AbstractQuery
     /**
      * getting last element of prepared data
      *
-     * @param bool $object
+     * @param array $column
      * @return object|array|null
      * @throws ConditionNotAllowedException
      */
-    public function last($object = false)
+    public function last($column = [])
     {
         $this->prepare();
 
         $data = $this->_map;
+        $this->_select = $column;
+
         if (count($data) > 0) {
-            return $this->prepareResult(end($data), $object);
+            return $this->prepareResult(end($data));
         }
 
         return null;
@@ -364,15 +428,16 @@ abstract class AbstractQuery
      * getting nth number of element of prepared data
      *
      * @param int $index
-     * @param bool $object
+     * @param array $column
      * @return object|array|null
      * @throws ConditionNotAllowedException
      */
-    public function nth($index, $object = false)
+    public function nth($index, $column = [])
     {
         $this->prepare();
 
         $data = $this->_map;
+        $this->_select = $column;
         $total_elm = count($data);
         $idx =  abs($index);
 
@@ -386,7 +451,7 @@ abstract class AbstractQuery
             $result = $data[$this->count() + $index];
         }
 
-        return $this->prepareResult($result, $object);
+        return $this->prepareResult($result);
     }
 
     /**
@@ -452,14 +517,19 @@ abstract class AbstractQuery
      * getting data from desire path
      *
      * @param string $path
-     * @param bool $object
+     * @param array $column
      * @return mixed
      * @throws NullValueException
      * @throws ConditionNotAllowedException
      */
-    public function find($path, $object = false)
+    public function find($path, $column = [])
     {
-        return $this->from($path)->prepare()->get($object);
+        return $this->from($path)->prepare()->get($column);
+    }
+
+    public function value()
+    {
+        return $this->_map;
     }
 
     /**
@@ -563,18 +633,6 @@ abstract class AbstractQuery
     }
 
     /**
-     * @param array $data
-     * @return $this
-     */
-    public function readFromArray(array $data)
-    {
-        $this->_map = $data;
-        $this->_baseContents = $data;
-
-        return $this;
-    }
-
-    /**
      * import raw JSON data for process
      *
      * @param string $data
@@ -599,8 +657,9 @@ abstract class AbstractQuery
      */
     public function collect($data)
     {
-        $this->_map = $this->objectToArray($data);
-        $this->_baseContents = &$this->_map;
+        $data = $this->objectToArray($data);
+        $this->_map = $data;
+        $this->_baseContents = $data;
 
         return $this;
     }
@@ -676,6 +735,27 @@ abstract class AbstractQuery
         $this->prepare();
 
         return json_encode($this->_map);
+    }
+
+    /**
+     * @return mixed
+     * @throws ConditionNotAllowedException
+     */
+    public function toArray()
+    {
+        $this->prepare();
+
+        $data = [];
+
+        foreach ($this->_map as $key => $map) {
+            if ($map instanceof AbstractQuery) {
+                $data[$key] = $map->toArray();
+            } else {
+                $data[$key] = $map;
+            }
+        }
+
+        return $data;
     }
 
     /**
