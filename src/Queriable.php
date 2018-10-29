@@ -53,6 +53,11 @@ trait Queriable
     protected $_isProcessed = false;
 
     /**
+     * @var string
+     */
+    protected $_traveler = '.';
+
+    /**
      * map all conditions with methods
      * @var array
      */
@@ -210,7 +215,12 @@ trait Queriable
         return $isReturnMap ? $data : true;
     }
 
-
+    /**
+     * Taking desire columns from result
+     *
+     * @param $array
+     * @return array
+     */
     public function takeColumn($array)
     {
         return $this->selectColumn($this->exceptColumn($array));
@@ -284,6 +294,13 @@ trait Queriable
         return $this;
     }
 
+    /**
+     * Create/Copy new instance with given value
+     *
+     * @param       $value
+     * @param array $meta
+     * @return mixed
+     */
     protected function instanceWithValue($value, $meta = [])
     {
         $this->fresh($meta);
@@ -324,7 +341,18 @@ trait Queriable
         throw new FileNotFoundException();
     }
 
+    /**
+     * Set traveler delimiter
+     *
+     * @param $delimiter
+     * @return $this
+     */
+    public function setTraveler($delimiter)
+    {
+        $this->_traveler = $delimiter;
 
+        return $this;
+    }
 
     /**
      * Get data from nested array
@@ -335,13 +363,13 @@ trait Queriable
      */
     protected function getFromNested($map, $node)
     {
-        if (empty($node) || $node == '.') {
+        if (empty($node) || $node == $this->_traveler) {
             return $map;
         }
 
         if ($node) {
             $terminate = false;
-            $path = explode('.', $node);
+            $path = explode($this->_traveler, $node);
 
             foreach ($path as $val) {
                 if (!array_key_exists($val, $map)) {

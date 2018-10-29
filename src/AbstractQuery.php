@@ -9,7 +9,14 @@ abstract class AbstractQuery implements \Countable, \Iterator
 {
     use Queriable;
 
+    /**
+     * @var int
+     */
     protected $_offset = 0;
+
+    /**
+     * @var null
+     */
     protected $_take = null;
 
     /**
@@ -56,25 +63,55 @@ abstract class AbstractQuery implements \Countable, \Iterator
         throw new NullValueException();
     }
 
+    public function __invoke()
+    {
+        return $this->_map;
+    }
+
+    /**
+     * Implementation of Iterator : Rewind the Iterator to the first element
+     *
+     * @return mixed|void
+     */
     public function rewind()
     {
         return reset($this->_map);
     }
 
+    /**
+     * Implementation of Iterator : Return the current element
+     * @return mixed
+     */
     public function current()
     {
         return current($this->_map);
     }
 
+    /**
+     * Implementation of Iterator : Return the key of the current element
+     *
+     * @return int|mixed|null|string
+     */
     public function key()
     {
         return key($this->_map);
     }
+
+    /**
+     * Implementation of Iterator : Move forward to next element
+     *
+     * @return mixed|void
+     */
     public function next()
     {
         return next($this->_map);
     }
 
+    /**
+     * Implementation of Iterator : Checks if current position is valid
+     *
+     * @return bool
+     */
     public function valid()
     {
         return key($this->_map) !== null;
@@ -111,6 +148,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
             '_conditions' => [],
             '_take' => null,
             '_offset' => 0,
+            '_traveler' => '.',
         ];
 
         foreach ($properties as $property=>$value) {
@@ -125,7 +163,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
     }
 
     /**
-     * Set node path, where JsonQ start to prepare
+     * Set node path, where QArray start to prepare
      *
      * @param null $node
      * @return $this
@@ -215,6 +253,12 @@ abstract class AbstractQuery implements \Countable, \Iterator
         return $this->get($column);
     }
 
+    /**
+     * Set offset value for slice of array
+     *
+     * @param $offset
+     * @return $this
+     */
     public function offset($offset)
     {
         $this->_offset = $offset;
@@ -222,6 +266,12 @@ abstract class AbstractQuery implements \Countable, \Iterator
         return $this;
     }
 
+    /**
+     * Set taken value for slice of array
+     *
+     * @param $take
+     * @return $this
+     */
     public function take($take)
     {
         $this->_take = $take;
@@ -291,6 +341,13 @@ abstract class AbstractQuery implements \Countable, \Iterator
         return $this;
     }
 
+    /**
+     * Group by count from array value
+     *
+     * @param $column
+     * @return $this
+     * @throws ConditionNotAllowedException
+     */
     public function countGroupBy($column)
     {
 
@@ -541,7 +598,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
      * Sort an array value
      *
      * @param string $order
-     * @return Jsonq
+     * @return AbstractQuery
      */
     public function sort($order = 'asc')
     {
