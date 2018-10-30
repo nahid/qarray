@@ -5,7 +5,7 @@ namespace Nahid\QArray;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\NullValueException;
 
-abstract class AbstractQuery implements \Countable, \Iterator
+abstract class QueryEngine implements \Countable, \Iterator
 {
     use Queriable;
 
@@ -121,7 +121,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
      * Deep copy current instance
      *
      * @param bool $fresh
-     * @return AbstractQuery
+     * @return QueryEngine
      */
     public function copy($fresh = false)
     {
@@ -230,7 +230,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
      * getting prepared data
      *
      * @param array $column
-     * @return AbstractQuery
+     * @return QueryEngine
      * @throws ConditionNotAllowedException
      */
     public function get($column = [])
@@ -297,7 +297,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
      *
      * @param mixed $data
      * @param bool $fresh
-     * @return AbstractQuery
+     * @return QueryEngine
      */
     public function reset($data = null, $fresh = false)
     {
@@ -598,7 +598,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
      * Sort an array value
      *
      * @param string $order
-     * @return AbstractQuery
+     * @return QueryEngine
      */
     public function sort($order = 'asc')
     {
@@ -717,7 +717,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
      * then method set position of working data
      *
      * @param string $node
-     * @return AbstractQuery
+     * @return QueryEngine
      * @throws NullValueException
      * @throws ConditionNotAllowedException
      */
@@ -734,7 +734,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
      * import raw JSON data for process
      *
      * @param string $data
-     * @return AbstractQuery
+     * @return QueryEngine
      */
     public function json($data)
     {
@@ -751,7 +751,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
      * import parsed data from raw json
      *
      * @param array|object $data
-     * @return AbstractQuery
+     * @return QueryEngine
      */
     public function collect($data)
     {
@@ -846,7 +846,7 @@ abstract class AbstractQuery implements \Countable, \Iterator
         $data = [];
 
         foreach ($this->_map as $key => $map) {
-            if ($map instanceof AbstractQuery) {
+            if ($map instanceof QueryEngine) {
                 $data[$key] = $map->toArray();
             } else {
                 $data[$key] = $map;

@@ -266,7 +266,6 @@ trait Queriable
      * Prepare data for result
      *
      * @param mixed $data
-     * @param bool $isObject
      * @return array|mixed
      */
     protected function prepareResult($data)

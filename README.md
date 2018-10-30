@@ -151,6 +151,7 @@ Following API examples are shown based on the sample JSON data given [here](exam
 * [whereEndsWith](#whereendswithkey-val)
 * [whereContains](#wherecontainskey-val)
 * [whereMatch](#wherematch-val)
+* [whereInstance](#whereinstance-val)
 * [sum](#sumproperty)
 * [count](#count)
 * [size](#size)
