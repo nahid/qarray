@@ -4,6 +4,7 @@ namespace Nahid\QArray;
 
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\NullValueException;
+use function DeepCopy\deep_copy;
 
 abstract class QueryEngine implements \Countable, \Iterator
 {
@@ -128,8 +129,7 @@ abstract class QueryEngine implements \Countable, \Iterator
         if ($fresh) {
             $this->fresh();
         }
-
-        return clone $this;
+        return deep_copy($this);
     }
 
     /**
@@ -240,8 +240,12 @@ abstract class QueryEngine implements \Countable, \Iterator
         }
 
         $this->prepare();
+        $prepare = $this->prepareResult($this->_map);
 
-        return $this->prepareResult($this->_map);
+        $result = $prepare->reset($prepare->_map, true);
+        $this->collect($this->_baseContents);
+
+        return $result;
     }
 
     /**
@@ -304,18 +308,18 @@ abstract class QueryEngine implements \Countable, \Iterator
      */
     public function reset($data = null, $fresh = false)
     {
-        if (!is_null($data)) {
-            $this->_baseContents = $data;
-        }
 
         if ($fresh) {
-            $self = $this->copy($fresh);
-            $self->collect($this->_baseContents);
+            $self = new static();
+            $self->collect($data);
 
             return $self;
         }
 
-        $this->_map = $this->_baseContents;
+        if (!is_null($data)) {
+            $this->collect($data);
+        }
+
         $this->reProcess();
 
         return $this;
@@ -500,7 +504,11 @@ abstract class QueryEngine implements \Countable, \Iterator
         }
 
         if (count($data) > 0) {
-            return $this->prepareResult(reset($data));
+            $prepare = $this->prepareResult(reset($data));
+            $result = $prepare->reset($prepare->_map, true);
+            $this->collect($this->_baseContents);
+
+            return $result;
         }
 
         return null;
@@ -521,7 +529,11 @@ abstract class QueryEngine implements \Countable, \Iterator
         $this->_select = $column;
 
         if (count($data) > 0) {
-            return $this->prepareResult(end($data));
+            $prepare = $this->prepareResult(end($data));
+            $result = $prepare->reset($prepare->_map, true);
+            $this->collect($this->_baseContents);
+
+            return $result;
         }
 
         return null;
@@ -554,7 +566,12 @@ abstract class QueryEngine implements \Countable, \Iterator
             $result = $data[$this->count() + $index];
         }
 
-        return $this->prepareResult($result);
+        $prepare = $this->prepareResult($result);
+        $result = $prepare->reset($prepare->_map, true);
+        $this->collect($this->_baseContents);
+
+        return $result;
+
     }
 
     /**
@@ -666,7 +683,11 @@ abstract class QueryEngine implements \Countable, \Iterator
             $new_data[$key] = $fn($val);
         }
 
-        return $this->prepareResult($new_data, false);
+        $prepare = $this->prepareResult($new_data, false);
+        $result = $prepare->reset($prepare->_map, true);
+        $this->collect($this->_baseContents);
+
+        return $result;
     }
 
     /**
@@ -715,7 +736,12 @@ abstract class QueryEngine implements \Countable, \Iterator
             }
         }
 
-        return $this->prepareResult($data, false);
+        $prepare = $this->prepareResult($data, false);
+        $result = $prepare->reset($prepare->_map, true);
+        $this->collect($this->_baseContents);
+
+        return $result;
+
     }
 
     /**
@@ -761,8 +787,9 @@ abstract class QueryEngine implements \Countable, \Iterator
     public function collect($data)
     {
         $data = $this->objectToArray($data);
-        $this->_map = $data;
-        $this->_baseContents = $data;
+        $this->_map = deep_copy($data);
+        $this->_baseContents = deep_copy($data);
+        $this->_isProcessed = false;
 
         return $this;
     }
@@ -837,7 +864,7 @@ abstract class QueryEngine implements \Countable, \Iterator
     {
         $this->prepare();
 
-        return json_encode($this->_map);
+        return json_encode($this->toArray());
     }
 
     /**
