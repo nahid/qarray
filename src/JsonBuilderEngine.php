@@ -4,7 +4,7 @@ namespace Nahid\QArray;
 
 use Nahid\QArray\QueryEngine;
 
-class JsonBuilder extends QueryEngine
+class JsonBuilderEngine extends QueryEngine
 {
     public function readPath($file)
     {

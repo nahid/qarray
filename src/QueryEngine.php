@@ -235,7 +235,10 @@ abstract class QueryEngine implements \Countable, \Iterator
      */
     public function get($column = [])
     {
-        $this->_select = $column;
+        if (count($column) > 0) {
+            $this->_select = $column;
+        }
+
         $this->prepare();
 
         return $this->prepareResult($this->_map);
@@ -492,7 +495,9 @@ abstract class QueryEngine implements \Countable, \Iterator
         $this->prepare();
 
         $data = $this->_map;
-        $this->_select = $column;
+        if (count($column) > 0) {
+            $this->_select = $column;
+        }
 
         if (count($data) > 0) {
             return $this->prepareResult(reset($data));

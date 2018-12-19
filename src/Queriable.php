@@ -236,7 +236,6 @@ trait Queriable
     protected function selectColumn($array)
     {
         $keys = $this->_select;
-
         if (count($keys) == 0) {
             return $array;
         }
