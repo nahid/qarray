@@ -440,13 +440,16 @@ abstract class QueryEngine implements \Countable, \Iterator
     {
         $this->prepare();
         $data = $this->toArray();
-        if (is_null($column)) {
-            $max = max($data);
-        } else {
-            $max = max(array_column($data, $column));
+        if (!is_null($column)) {
+            $values = [];
+            foreach ($data as $val) {
+                $values[] = $this->getFromNested($val, $column);
+            }
+
+            $data = $values;
         }
 
-        return $max;
+        return max($data);
     }
 
     /**
@@ -461,13 +464,16 @@ abstract class QueryEngine implements \Countable, \Iterator
         $this->prepare();
         $data = $this->toArray();
 
-        if (is_null($column)) {
-            $min = min($data);
-        } else {
-            $min = min(array_column($data, $column));
+        if (!is_null($column)) {
+            $values = [];
+            foreach ($data as $val) {
+                $values[] = $this->getFromNested($val, $column);
+            }
+
+            $data = $values;
         }
 
-        return $min;
+        return min($data);
     }
 
     /**
@@ -831,7 +837,7 @@ abstract class QueryEngine implements \Countable, \Iterator
      */
     protected function makeImplode($key, $delimiter)
     {
-        $data = array_column($this->_map, $key);
+        $data = array_column($this->toArray(), $key);
 
         if (is_array($data)) {
             return implode($delimiter, $data);
@@ -911,7 +917,7 @@ abstract class QueryEngine implements \Countable, \Iterator
     {
         $this->prepare();
 
-        return array_values($this->_map);
+        return array_values($this->toArray());
     }
 
     /**
