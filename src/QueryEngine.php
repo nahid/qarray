@@ -308,6 +308,9 @@ abstract class QueryEngine implements \Countable, \Iterator
      */
     public function reset($data = null, $fresh = false)
     {
+        if (is_null($data)) {
+            $data = $this->_baseContents;
+        }
 
         if ($fresh) {
             $self = new static();
@@ -316,9 +319,7 @@ abstract class QueryEngine implements \Countable, \Iterator
             return $self;
         }
 
-        if (!is_null($data)) {
-            $this->collect($data);
-        }
+        $this->collect($data);
 
         $this->reProcess();
 
