@@ -9,6 +9,7 @@ use function DeepCopy\deep_copy;
 abstract class QueryEngine implements \Countable, \Iterator
 {
     use Queriable;
+    use Functionable;
 
     /**
      * @var int

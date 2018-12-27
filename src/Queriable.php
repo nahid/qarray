@@ -414,6 +414,7 @@ trait Queriable
     {
         $data = $this->getData();
         $conditions = $this->_conditions;
+
         $result = array_filter($data, function ($val) use ($conditions) {
             $res = false;
             foreach ($conditions as $cond) {
@@ -429,7 +430,18 @@ trait Queriable
                     }
 
                     $value = $this->getFromNested($val, $rule['key']);
-                    $return = $value instanceof ValueNotFound ? false :  call_user_func_array($function, [$value, $rule['value']]);
+                    //$return = false;
+                    if ($value instanceof ValueNotFound) {
+                        $return = false;
+                    } else {
+                        if (!is_null($rule['function']) && $functionable = $this->hasFunction($rule['function'])) {
+                            $callable_function = [$this, $functionable];
+                            $value = call_user_func_array($callable_function, [$value]);
+                        }
+
+                        $return = call_user_func_array($function, [$value, $rule['value']]);
+                    }
+                    //$return = $value instanceof ValueNotFound ? false :  call_user_func_array($function, [$value, $rule['value']]);
                     $tmp &= $return;
                 }
                 $res |= $tmp;
@@ -493,15 +505,25 @@ trait Queriable
     {
         $current = end($this->_conditions);
         $index = key($this->_conditions);
-        if (is_callable($key)) {
-            $key($this);
-            return $this;
+
+        $extract_key = explode('=>', $key);
+        $func = null;
+
+        if (count($extract_key) == 2) {
+            $func = ltrim($extract_key[0], '$');
+            $key = $extract_key[1];
         }
+
+//        if (is_callable($key)) {
+//            $key($this);
+//            return $this;
+//        }
 
         array_push($current, [
             'key' => $key,
             'condition' => $condition,
             'value' => $value,
+            'function'  => $func,
         ]);
 
         $this->_conditions[$index] = $current;
@@ -636,12 +658,21 @@ trait Queriable
      * make WHERE DATE clause
      *
      * @param string $key
+     * @param string $condition
      * @param string $value
      * @return $this
      */
-    public function whereDate($key, $value)
+    public function whereDate($key, $condition, $value = null)
     {
-        $this->where($key, 'dates', $value);
+        $key = '$unix_date=>' . $key;
+        if (is_null($value)) {
+            $value = $condition;
+            $condition = '=';
+        }
+
+        $value = strtotime($value);
+
+        $this->where($key, $condition, $value);
 
         return $this;
     }
@@ -650,12 +681,19 @@ trait Queriable
      * make WHERE month clause
      *
      * @param string $key
+     * @param mixed $condition
      * @param string $value
      * @return $this
      */
-    public function whereMonth($key, $value)
+    public function whereMonth($key, $condition, $value)
     {
-        $this->where($key, 'month', $value);
+        $key = '$month=>' . $key;
+        if (is_null($value)) {
+            $value = $condition;
+            $condition = '=';
+        }
+
+        $this->where($key, $condition, $value);
 
         return $this;
     }
@@ -664,12 +702,19 @@ trait Queriable
      * make WHERE Year clause
      *
      * @param string $key
+     * @param mixed $condition
      * @param string $value
      * @return $this
      */
-    public function whereYear($key, $value)
+    public function whereYear($key, $condition, $value)
     {
-        $this->where($key, 'year', $value);
+        $key = '$year=>' . $key;
+        if (is_null($value)) {
+            $value = $condition;
+            $condition = '=';
+        }
+
+        $this->where($key, $condition, $value);
 
         return $this;
     }
