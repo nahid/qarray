@@ -308,6 +308,9 @@ abstract class QueryEngine implements \Countable, \Iterator
      */
     public function reset($data = null, $fresh = false)
     {
+        if (is_null($data)) {
+            $data = deep_copy($this->_baseContents);
+        }
 
         if ($fresh) {
             $self = new static();
