@@ -10,6 +10,8 @@ trait Functionable
         'month'  => 'month',
         'unix_time'  => 'unixTime',
         'unix_date'  => 'unixDate',
+        'count'  => 'total',
+        'lowercase'  => 'lowercase',
     ];
 
 
@@ -38,6 +40,19 @@ trait Functionable
         return date('m', strtotime($value));
     }
 
+    public function total($value)
+    {
+        if (is_array($value)) {
+            return count($value);
+        }
+        return 0;
+    }
+
+    public function lowercase($value)
+    {
+        return strtolower($value);
+    }
+
     public static function hasFunction($func)
     {
         return static::$_functions[$func] ?? false;
@@ -46,8 +61,11 @@ trait Functionable
 
     public static function register($name, callable $func)
     {
-        if (is_callable($func)) {
-            static::$_functions[$name]  = $func;
+        if (!array_key_exists($name, static::$_functions)) {
+            static::$_functions[$name] = $func;
+            return true;
         }
+
+        return false;
     }
 }

@@ -430,15 +430,11 @@ trait Queriable
                     }
 
                     $value = $this->getFromNested($val, $rule['key']);
-                    //$return = false;
+
                     if ($value instanceof ValueNotFound) {
                         $return = false;
                     } else {
-                        if (!is_null($rule['function']) && $functionable = $this->hasFunction($rule['function'])) {
-                            $callable_function = [$this, $functionable];
-                            $value = call_user_func_array($callable_function, [$value]);
-                        }
-
+                        $value = $this->callQueryFunction($value, $rule['function']);
                         $return = call_user_func_array($function, [$value, $rule['value']]);
                     }
                     //$return = $value instanceof ValueNotFound ? false :  call_user_func_array($function, [$value, $rule['value']]);
@@ -450,6 +446,20 @@ trait Queriable
         });
 
         return $result;
+    }
+
+    protected function callQueryFunction($value, $func)
+    {
+        if (!is_null($func) && $functionable = $this->hasFunction($func)) {
+            $callable_function = $functionable;
+            if (!is_callable($callable_function)) {
+                $callable_function = [$this, $functionable];
+            }
+
+            $value = call_user_func_array($callable_function, [$value]);
+        }
+
+        return $value;
     }
 
     /**
@@ -655,6 +665,21 @@ trait Queriable
     }
 
     /**
+     * make WHERE LIKE clause
+     *
+     * @param string $key
+     * @param string $value
+     * @return $this
+     */
+    public function whereLike($key, $value)
+    {
+        $key = '$lowercase=>' . $key;
+        $this->where($key, 'contains', strtolower($value));
+
+        return $this;
+    }
+
+    /**
      * make WHERE DATE clause
      *
      * @param string $key
@@ -746,6 +771,26 @@ trait Queriable
 
         return $this;
     }
+    /**
+     * make WHERE any clause
+     *
+     * @param string $key
+     * @param mixed
+     * @param mixed
+     * @return $this
+     */
+    public function whereCount($key, $condition, $value = null)
+    {
+        $key = '$count=>' . $key;
+        if (is_null($value)) {
+            $value = $condition;
+            $condition = '=';
+        }
+
+        $this->where($key, $condition, $value);
+
+        return $this;
+    }
 
     /**
      * make macro for custom where clause
@@ -756,7 +801,7 @@ trait Queriable
      */
     public static function macro($name, callable $fn)
     {
-        if (!in_array($name, self::$_rulesMap)) {
+        if (!array_key_exists($name, self::$_rulesMap)) {
             self::$_rulesMap[$name] = $fn;
             return true;
         }
