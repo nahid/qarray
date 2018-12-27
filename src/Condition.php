@@ -287,8 +287,25 @@ class Condition
      *
      * @return bool
      */
-    public function instance($value, $comparable)
+    public static function instance($value, $comparable)
     {
         return $value instanceof $comparable;
+    }
+
+    /**
+     * is given value exits in given key of array
+     *
+     * @param string $value
+     * @param string $comparable
+     *
+     * @return bool
+     */
+    public static function any($value, $comparable)
+    {
+        if (is_array($value)) {
+            return in_array($comparable, $value);
+        }
+
+        return false;
     }
 }
