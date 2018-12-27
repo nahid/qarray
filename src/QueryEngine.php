@@ -39,10 +39,10 @@ abstract class QueryEngine implements \Countable, \Iterator
     }
 
     /**
-     * @param string $file
+     * @param string $path
      * @return array
      */
-    public abstract function readPath($file);
+    public abstract function readPath($path);
 
     /**
      * @param string $data
@@ -319,9 +319,7 @@ abstract class QueryEngine implements \Countable, \Iterator
             return $self;
         }
 
-        if (!is_null($data)) {
-            $this->collect($data);
-        }
+        $this->collect($data);
 
         $this->reProcess();
 
