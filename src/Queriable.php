@@ -128,6 +128,10 @@ trait Queriable
 
         if (count($this->_conditions) > 0) {
             $calculatedData = $this->processConditions();
+            if (!is_null($this->_take)) {
+                $calculatedData = array_slice($calculatedData, $this->_offset, $this->_take);
+            }
+
             $this->_map = $this->objectToArray($calculatedData);
 
             $this->_conditions = [];
@@ -137,6 +141,10 @@ trait Queriable
         }
 
         $this->_isProcessed = true;
+        if (!is_null($this->_take)) {
+            $this->_map = array_slice($this->_map, $this->_offset, $this->_take);
+        }
+
         $this->_map = $this->objectToArray($this->getData());
         return $this;
     }
@@ -275,17 +283,13 @@ trait Queriable
             return $this->instanceWithValue($data);
         }
 
-        if (!is_null($this->_take)) {
-            $data = array_slice($data, $this->_offset, $this->_take);
-        }
-
         if ($this->isMultiArray($data)) {
             foreach ($data as $key => $val) {
                 $output[$key] = $this->instanceWithValue($val, ['_select' => $this->_select, '_except' => $this->_except]);
             }
         } else {
-            $value = json_decode(json_encode($this->takeColumn($data)), true);
-            $output = $this->instanceWithValue($value, ['_select' => $this->_select, '_except' => $this->_except]);
+           // $value = json_decode(json_encode($this->takeColumn($data)), true);
+            $output = $this->instanceWithValue($data, ['_select' => $this->_select, '_except' => $this->_except]);
         }
 
         $this->_map = $output;
