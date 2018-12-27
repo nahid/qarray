@@ -240,12 +240,8 @@ abstract class QueryEngine implements \Countable, \Iterator
         }
 
         $this->prepare();
-        $prepare = $this->prepareResult($this->_map);
 
-        $result = $prepare->reset($prepare->_map, true);
-        $this->collect($this->_baseContents);
-
-        return $result;
+        return $this->prepareResult($this->_map);
     }
 
     /**
@@ -511,11 +507,9 @@ abstract class QueryEngine implements \Countable, \Iterator
         }
 
         if (count($data) > 0) {
-            $prepare = $this->prepareResult(reset($data));
-            $result = $prepare->reset($prepare->_map, true);
-            $this->collect($this->_baseContents);
-
-            return $result;
+            $data = $this->toArray();
+            $this->_map = reset($data);
+            return $this;
         }
 
         return null;
@@ -536,11 +530,7 @@ abstract class QueryEngine implements \Countable, \Iterator
         $this->_select = $column;
 
         if (count($data) > 0) {
-            $prepare = $this->prepareResult(end($data));
-            $result = $prepare->reset($prepare->_map, true);
-            $this->collect($this->_baseContents);
-
-            return $result;
+            return $this->prepareResult(end($data));
         }
 
         return null;
@@ -573,12 +563,7 @@ abstract class QueryEngine implements \Countable, \Iterator
             $result = $data[$this->count() + $index];
         }
 
-        $prepare = $this->prepareResult($result);
-        $result = $prepare->reset($prepare->_map, true);
-        $this->collect($this->_baseContents);
-
-        return $result;
-
+        return $this->prepareResult($result);
     }
 
     /**
@@ -654,7 +639,7 @@ abstract class QueryEngine implements \Countable, \Iterator
         return $this->from($path)->prepare()->get($column);
     }
 
-    public function value()
+    public function result()
     {
         return $this->_map;
     }
@@ -690,11 +675,7 @@ abstract class QueryEngine implements \Countable, \Iterator
             $new_data[$key] = $fn($val);
         }
 
-        $prepare = $this->prepareResult($new_data, false);
-        $result = $prepare->reset($prepare->_map, true);
-        $this->collect($this->_baseContents);
-
-        return $result;
+        return $this->prepareResult($new_data);
     }
 
     /**
@@ -743,11 +724,7 @@ abstract class QueryEngine implements \Countable, \Iterator
             }
         }
 
-        $prepare = $this->prepareResult($data, false);
-        $result = $prepare->reset($prepare->_map, true);
-        $this->collect($this->_baseContents);
-
-        return $result;
+        return $this->prepareResult($data);
 
     }
 
@@ -881,18 +858,8 @@ abstract class QueryEngine implements \Countable, \Iterator
     public function toArray()
     {
         $this->prepare();
-
-        $data = [];
-
-        foreach ($this->_map as $key => $map) {
-            if ($map instanceof QueryEngine) {
-                $data[$key] = $map->toArray();
-            } else {
-                $data[$key] = $map;
-            }
-        }
-
-        return $data;
+        $maps = $this->_map;
+        return convert_to_array($maps);
     }
 
     /**

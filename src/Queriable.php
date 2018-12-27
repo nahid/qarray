@@ -281,11 +281,7 @@ trait Queriable
 
         if ($this->isMultiArray($data)) {
             foreach ($data as $key => $val) {
-                if (is_array($val)) {
-                    $output[$key] = $this->instanceWithValue($val, ['_select' => $this->_select, '_except' => $this->_except]);
-                } else {
-                    $output[$key] = $val;
-                }
+                $output[$key] = $this->instanceWithValue($val, ['_select' => $this->_select, '_except' => $this->_except]);
             }
         } else {
             $value = json_decode(json_encode($this->takeColumn($data)), true);
@@ -306,7 +302,7 @@ trait Queriable
      */
     protected function instanceWithValue($value, $meta = [])
     {
-        $instance = $this->copy();
+        $instance = new static();
         $instance->fresh($meta);
         $value = $instance->takeColumn($value);
         return $instance->collect($value);

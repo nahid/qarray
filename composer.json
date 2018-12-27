@@ -22,7 +22,10 @@
   "autoload": {
     "psr-4": {
       "Nahid\\QArray\\": "src/"
-    }
+    },
+    "files":[
+      "helpers/qarray.php"
+    ]
   },
   "autoload-dev": {
     "psr-4": {
