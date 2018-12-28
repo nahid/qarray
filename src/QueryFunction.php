@@ -13,6 +13,12 @@ class QueryFunction
         'count'  => 'total',
         'lowercase'  => 'lowercase',
         'uppercase'  => 'uppercase',
+        'round'  => 'round',
+        'ceil'  => 'ceil',
+        'floor'  => 'floor',
+        'sqrt'  => 'sqrt',
+        'sin'  => 'sin',
+        'cos'  => 'cos',
     ];
 
 
@@ -58,6 +64,36 @@ class QueryFunction
     public static function uppercase($value)
     {
         return strtoupper($value);
+    }
+
+    public static function round($value)
+    {
+        return round($value, 1);
+    }
+
+    public static function ceil($value)
+    {
+        return ceil($value);
+    }
+
+    public static function floor($value)
+    {
+        return floor($value);
+    }
+
+    public static function sqrt($value)
+    {
+        return sqrt($value);
+    }
+
+    public static function sin($value)
+    {
+        return sin($value);
+    }
+
+    public static function cos($value)
+    {
+        return cos($value);
     }
 
     public static function hasFunction($func)

@@ -3,6 +3,7 @@
 namespace Nahid\QArray;
 
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
+use Nahid\QArray\Exceptions\InvalidQueryFunctionException;
 use Nahid\QArray\Exceptions\NullValueException;
 use function DeepCopy\deep_copy;
 
@@ -203,14 +204,19 @@ abstract class QueryEngine implements \Countable, \Iterator
     {
         $args = func_get_args();
         if (count($args) > 0 ){
-            foreach($args as $arg) {
-                $keys = $this->getFunctions($arg);
-                $this->_select[$keys['key']] = $keys['fn'];
-            }
+            $this->setSelect($args);
             //$this->_select = $args;
         }
 
         return $this;
+    }
+
+    protected function setSelect($columns = [])
+    {
+        foreach($columns as $column) {
+            $keys = $this->getFunctions($column);
+            $this->_select[$keys['key']] = $keys['fn'];
+        }
     }
 
     protected function getFunctions($string)
@@ -220,7 +226,12 @@ abstract class QueryEngine implements \Countable, \Iterator
         if (preg_match('/^\:((([a-zA-Z0-9_]+)\(\)\|?)*)\=\>(\V+)$/', $key, $matches)) {
             $fns = explode('|', $matches[1]);
             $function = array_map(function($val) {
-                return rtrim($val, '()');
+                $func = rtrim($val, '()');
+                if (!QueryFunction::hasFunction($func)) {
+                    throw new InvalidQueryFunctionException($func);
+                }
+
+                return $func;
             }, $fns);
 
             $key = $matches[4];
@@ -254,10 +265,7 @@ abstract class QueryEngine implements \Countable, \Iterator
      */
     public function get($column = [])
     {
-        if (count($column) > 0) {
-            $this->_select = $column;
-        }
-
+        $this->setSelect($column);
         $this->prepare();
 
         return $this->prepareResult($this->_map);
@@ -521,9 +529,7 @@ abstract class QueryEngine implements \Countable, \Iterator
         $this->prepare();
 
         $data = $this->_map;
-        if (count($column) > 0) {
-            $this->_select = $column;
-        }
+        $this->setSelect($column);
 
         if (count($data) > 0) {
             $data = $this->toArray();
@@ -546,7 +552,7 @@ abstract class QueryEngine implements \Countable, \Iterator
         $this->prepare();
 
         $data = $this->_map;
-        $this->_select = $column;
+        $this->setSelect($column);
 
         if (count($data) > 0) {
             return $this->prepareResult(end($data));
@@ -568,7 +574,7 @@ abstract class QueryEngine implements \Countable, \Iterator
         $this->prepare();
 
         $data = $this->_map;
-        $this->_select = $column;
+        $this->setSelect($column);
         $total_elm = count($data);
         $idx =  abs($index);
 
@@ -854,7 +860,7 @@ abstract class QueryEngine implements \Countable, \Iterator
     {
         $this->prepare();
 
-        return array_column($this->_map, $column);
+        return array_column($this->toArray(), $column);
     }
 
     /**
