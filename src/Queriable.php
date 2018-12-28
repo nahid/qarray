@@ -5,6 +5,7 @@ namespace Nahid\QArray;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\FileNotFoundException;
 use Nahid\QArray\Exceptions\InvalidJsonException;
+use Nahid\QArray\Exceptions\InvalidQueryFunctionException;
 use Nahid\QArray\ValueNotFound;
 
 trait Queriable
@@ -473,13 +474,14 @@ trait Queriable
      */
     protected function callQueryFunction($value, $func)
     {
-        if (!is_null($func) && $functionable = $this->hasFunction($func)) {
+        if (!is_null($func) && $functionable = QueryFunction::hasFunction($func)) {
             $callable_function = $functionable;
-            if (!is_callable($callable_function)) {
-                $callable_function = [$this, $functionable];
+            if (method_exists(QueryFunction::class, $func)) {
+                $callable_function = [QueryFunction::class, $functionable];
             }
 
             $value = call_user_func_array($callable_function, [$value]);
+
         }
 
         return $value;
@@ -533,20 +535,21 @@ trait Queriable
      * @param string $condition
      * @param mixed $value
      * @return $this
+     * @throws InvalidQueryFunctionException
      */
     protected function makeWhere($key, $condition = null, $value = null)
     {
         $current = end($this->_conditions);
         $index = key($this->_conditions);
-
-        $extract_key = explode('=>', $key);
         $func = null;
 
-        if (count($extract_key) == 2) {
-            $func = ltrim($extract_key[0], '$');
-            $key = $extract_key[1];
+        if (preg_match('/^\:([a-zA-Z0-9_]+)\(\)\=\>(\V+)$/', $key, $matches)) {
+            $func = $matches[1];
+            if (!QueryFunction::hasFunction($func)) {
+                throw new InvalidQueryFunctionException($func);
+            }
+            $key = $matches[2];
         }
-
 //        if (is_callable($key)) {
 //            $key($this);
 //            return $this;
@@ -712,7 +715,7 @@ trait Queriable
      */
     public function whereDate($key, $condition, $value = null)
     {
-        $key = '$unix_date=>' . $key;
+        $key = ':unix_date()=>' . $key;
         if (is_null($value)) {
             $value = $condition;
             $condition = '=';
@@ -735,7 +738,7 @@ trait Queriable
      */
     public function whereMonth($key, $condition, $value)
     {
-        $key = '$month=>' . $key;
+        $key = ':month()=>' . $key;
         if (is_null($value)) {
             $value = $condition;
             $condition = '=';
@@ -756,7 +759,7 @@ trait Queriable
      */
     public function whereYear($key, $condition, $value)
     {
-        $key = '$year=>' . $key;
+        $key = ':year()=>' . $key;
         if (is_null($value)) {
             $value = $condition;
             $condition = '=';
@@ -804,7 +807,7 @@ trait Queriable
      */
     public function whereCount($key, $condition, $value = null)
     {
-        $key = '$count=>' . $key;
+        $key = '$count()=>' . $key;
         if (is_null($value)) {
             $value = $condition;
             $condition = '=';

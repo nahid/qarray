@@ -2,7 +2,7 @@
 
 namespace Nahid\QArray;
 
-trait Functionable
+class QueryFunction
 {
     protected static $_functions = [
         'date'  => 'date',
@@ -15,32 +15,32 @@ trait Functionable
     ];
 
 
-    public function unixTime($value)
+    public static function unixTime($value)
     {
         return strtotime($value);
     }
 
-    public function unixDate($value)
+    public static function unixDate($value)
     {
         return strtotime(date('Y-m-d', strtotime($value)));
     }
 
-    public function date($value)
+    public static function date($value)
     {
         return date('Y-m-d', strtotime($value));
     }
 
-    public function year($value)
+    public static function year($value)
     {
         return date('Y', strtotime($value));
     }
 
-    public function month($value)
+    public static function month($value)
     {
         return date('m', strtotime($value));
     }
 
-    public function total($value)
+    public static function total($value)
     {
         if (is_array($value)) {
             return count($value);
@@ -48,14 +48,14 @@ trait Functionable
         return 0;
     }
 
-    public function lowercase($value)
+    public static function lowercase($value)
     {
         return strtolower($value);
     }
 
     public static function hasFunction($func)
     {
-        return static::$_functions[$func] ?? false;
+        return isset(static::$_functions[$func]) ? static::$_functions[$func] : false;
     }
 
 
