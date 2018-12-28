@@ -281,16 +281,19 @@ trait Queriable
         $output = [];
 
         if (is_null($data) || is_scalar($data)) {
-            return $this->instanceWithValue($data);
+            $this->_map = $data;
+            return $this;
         }
 
         if ($this->isMultiArray($data)) {
             foreach ($data as $key => $val) {
                 $output[$key] = $this->instanceWithValue($val, ['_select' => $this->_select, '_except' => $this->_except]);
             }
-        } else {
+        } elseif (is_array($data) && count($data) != 0) {
            // $value = json_decode(json_encode($this->takeColumn($data)), true);
             $output = $this->instanceWithValue($data, ['_select' => $this->_select, '_except' => $this->_except]);
+        } else {
+            $output = $data;
         }
 
         $this->_map = $output;
@@ -420,15 +423,7 @@ trait Queriable
             foreach ($conditions as $cond) {
                 $tmp = true;
                 foreach ($cond as $rule) {
-                    $function = self::$_rulesMap[$rule['condition']];
-                    if (!is_callable($function)) {
-                        if (!method_exists(Condition::class, $function)) {
-                            throw new ConditionNotAllowedException("Exception: $function condition not allowed");
-                        }
-
-                        $function = [Condition::class, $function];
-                    }
-
+                    $function = $this->makeConditionalFunction($rule['condition']);
                     $value = $this->getFromNested($val, $rule['key']);
 
                     if ($value instanceof ValueNotFound) {
@@ -448,6 +443,34 @@ trait Queriable
         return $result;
     }
 
+    /**
+     * @param $condition
+     * @return array
+     * @throws ConditionNotAllowedException
+     */
+    protected function makeConditionalFunction($condition)
+    {
+        if (!isset(self::$_rulesMap[$condition])) {
+            throw new ConditionNotAllowedException("Exception: {$condition} condition not allowed");
+        }
+
+        $function = self::$_rulesMap[$condition];
+        if (!is_callable($function)) {
+            if (!method_exists(Condition::class, $function)) {
+                throw new ConditionNotAllowedException("Exception: {$condition} condition not allowed");
+            }
+
+            $function = [Condition::class, $function];
+        }
+
+        return $function;
+    }
+
+    /**
+     * @param $value
+     * @param $func
+     * @return mixed
+     */
     protected function callQueryFunction($value, $func)
     {
         if (!is_null($func) && $functionable = $this->hasFunction($func)) {
