@@ -203,10 +203,30 @@ abstract class QueryEngine implements \Countable, \Iterator
     {
         $args = func_get_args();
         if (count($args) > 0 ){
-            $this->_select = $args;
+            foreach($args as $arg) {
+                $keys = $this->getFunctions($arg);
+                $this->_select[$keys['key']] = $keys['fn'];
+            }
+            //$this->_select = $args;
         }
 
         return $this;
+    }
+
+    protected function getFunctions($string)
+    {
+        $function = [];
+        $key = $string;
+        if (preg_match('/^\:((([a-zA-Z0-9_]+)\(\)\|?)*)\=\>(\V+)$/', $key, $matches)) {
+            $fns = explode('|', $matches[1]);
+            $function = array_map(function($val) {
+                return rtrim($val, '()');
+            }, $fns);
+
+            $key = $matches[4];
+        }
+
+        return ['key' => $key, 'fn' => $function];
     }
 
     /**

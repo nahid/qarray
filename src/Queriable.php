@@ -250,8 +250,31 @@ trait Queriable
             return $array;
         }
 
-        return array_intersect_key($array, array_flip((array) $keys));
+        $select = array_keys($keys);
+        $columns = array_intersect_key($array, array_flip((array) $select));
+        $row = [];
+        foreach ($columns as $column=>$val) {
+            if (array_key_exists($column, $keys)) {
+                $fns = $keys[$column];
+                $fns = array_reverse($fns);
+                $val = $this->tunnel($val, $fns);
+            }
+
+            $row[$column] = $val;
+        }
+
+        return $row;
     }
+
+    protected function tunnel($value, $fns)
+    {
+        array_map(function($fn) use(&$value){
+            $value = $this->callQueryFunction($value, $fn);
+        }, $fns);
+
+        return $value;
+    }
+
 
     /**
      * selecting specific column
@@ -430,7 +453,7 @@ trait Queriable
                     if ($value instanceof ValueNotFound) {
                         $return = false;
                     } else {
-                        $value = $this->callQueryFunction($value, $rule['function']);
+                        $value = $this->tunnel($value, $rule['function']);
                         $return = call_user_func_array($function, [$value, $rule['value']]);
                     }
                     //$return = $value instanceof ValueNotFound ? false :  call_user_func_array($function, [$value, $rule['value']]);
@@ -476,11 +499,19 @@ trait Queriable
     {
         if (!is_null($func) && $functionable = QueryFunction::hasFunction($func)) {
             $callable_function = $functionable;
-            if (method_exists(QueryFunction::class, $func)) {
+            if (is_callable($functionable, false, $fn_name)) {
+                if ($fn_name != 'Closure::__invoke') {
+                    $functionable = $fn_name;
+                }
+            }
+
+            if (is_string($functionable)) {
                 $callable_function = [QueryFunction::class, $functionable];
             }
 
-            $value = call_user_func_array($callable_function, [$value]);
+            if (isset($callable_function)) {
+                $value = call_user_func_array($callable_function, [$value]);
+            }
 
         }
 
@@ -541,25 +572,18 @@ trait Queriable
     {
         $current = end($this->_conditions);
         $index = key($this->_conditions);
-        $func = null;
-
-        if (preg_match('/^\:([a-zA-Z0-9_]+)\(\)\=\>(\V+)$/', $key, $matches)) {
-            $func = $matches[1];
-            if (!QueryFunction::hasFunction($func)) {
-                throw new InvalidQueryFunctionException($func);
-            }
-            $key = $matches[2];
-        }
 //        if (is_callable($key)) {
 //            $key($this);
 //            return $this;
 //        }
 
+        $keys = $this->getFunctions($key);
+
         array_push($current, [
-            'key' => $key,
+            'key' => $keys['key'],
             'condition' => $condition,
             'value' => $value,
-            'function'  => $func,
+            'function'  => $keys['fn'],
         ]);
 
         $this->_conditions[$index] = $current;

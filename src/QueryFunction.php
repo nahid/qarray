@@ -12,6 +12,7 @@ class QueryFunction
         'unix_date'  => 'unixDate',
         'count'  => 'total',
         'lowercase'  => 'lowercase',
+        'uppercase'  => 'uppercase',
     ];
 
 
@@ -27,7 +28,8 @@ class QueryFunction
 
     public static function date($value)
     {
-        return date('Y-m-d', strtotime($value));
+        $time = is_int($value) ? $value : strtotime($value);
+        return date('Y-m-d', $time);
     }
 
     public static function year($value)
@@ -51,6 +53,11 @@ class QueryFunction
     public static function lowercase($value)
     {
         return strtolower($value);
+    }
+
+    public static function uppercase($value)
+    {
+        return strtoupper($value);
     }
 
     public static function hasFunction($func)
