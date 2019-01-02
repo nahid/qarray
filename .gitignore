@@ -4,5 +4,5 @@ vendor
 .php_cs.cache
 composer.lock
 index.php
-data.json
+products.json
 src/JsonBuilder.php

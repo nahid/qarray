@@ -64,6 +64,13 @@ abstract class QueryEngine implements \Countable, \Iterator
         throw new NullValueException();
     }
 
+    public function __set($key, $val)
+    {
+        if (is_array($this->_map)) {
+            $this->_map[$key] = $val;
+        }
+    }
+
     public function __invoke()
     {
         return $this->_map;
@@ -695,12 +702,11 @@ abstract class QueryEngine implements \Countable, \Iterator
     {
         $this->prepare();
 
-        $new_data = [];
         foreach ($this->_map as $key => $val) {
-            $new_data[$key] = $fn($val);
+            $fn($val);
         }
 
-        return $this->prepareResult($new_data);
+        return $this;
     }
 
     /**

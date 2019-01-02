@@ -8,7 +8,7 @@ use Nahid\JsonQ\Exceptions\InvalidJsonException;
 
 class JsonQueriableTest extends AbstractTestCase
 {
-    const FILE_NAME = 'data.json';
+    const FILE_NAME = 'products.json';
     const FILE_INVALID_NAME = 'invalid_data.json';
     
     /**
