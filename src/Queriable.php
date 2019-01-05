@@ -315,7 +315,8 @@ trait Queriable
             }
         } elseif (is_array($data) && count($data) != 0) {
            // $value = json_decode(json_encode($this->takeColumn($data)), true);
-            $output = $this->instanceWithValue($data, ['_select' => $this->_select, '_except' => $this->_except]);
+            //$output = $this->instanceWithValue($data, ['_select' => $this->_select, '_except' => $this->_except]);
+            $output = $this->takeColumn($data);
         } else {
             $output = $data;
         }

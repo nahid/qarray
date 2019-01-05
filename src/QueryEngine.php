@@ -409,6 +409,31 @@ abstract class QueryEngine implements \Countable, \Iterator
         return $this;
     }
 
+
+    /**
+     * getting distinct data from specific column
+     *
+     * @param string $column
+     * @return $this
+     * @throws ConditionNotAllowedException
+     */
+    public function distinct($column)
+    {
+        $this->prepare();
+
+        $data = [];
+        foreach ($this->_map as $map) {
+            $value = $this->getFromNested($map, $column);
+            if ($value && !array_key_exists($value, $data)) {
+                $data[$value] = $map;
+            }
+        }
+
+        $this->_map = array_values($data);
+        return $this;
+    }
+
+
     /**
      * count prepared data
      *
