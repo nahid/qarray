@@ -7,7 +7,7 @@ use Nahid\QArray\Exceptions\InvalidQueryFunctionException;
 use Nahid\QArray\Exceptions\NullValueException;
 use function DeepCopy\deep_copy;
 
-abstract class QueryEngine implements \Countable, \Iterator
+abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
 {
     use Queriable;
     /**
@@ -73,6 +73,32 @@ abstract class QueryEngine implements \Countable, \Iterator
     public function __invoke()
     {
         return $this->_map;
+    }
+
+    public function offsetExists($key)
+    {
+        return isset($this->_map[$key]);
+    }
+
+    public function offsetGet($key)
+    {
+        if ($this->offsetExists($key)) {
+            return $this->_map[$key];
+        }
+
+        return new ValueNotFound();
+    }
+
+    public function offsetSet($key, $value)
+    {
+        $this->_map[$key] = $value;
+    }
+
+    public function offsetUnset($key)
+    {
+        if ($this->offsetExists($key)) {
+           unset($this->_map[$key]);
+        }
     }
 
     /**

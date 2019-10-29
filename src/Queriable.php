@@ -317,7 +317,7 @@ trait Queriable
             return $this;
         }
 
-        if ($this->isCollection($data)) {
+        if ($this->isCollection($data) && $this->isMultiArray($data)) {
             foreach ($data as $key => $val) {
                 $output[$key] = $this->instanceWithValue($val, ['_select' => $this->_select, '_except' => $this->_except]);
             }
