@@ -733,6 +733,28 @@ abstract class QueryEngine implements \Countable, \Iterator
 
         return $this;
     }
+    
+    
+     /**
+     * map prepared data by using callable function for each entity
+     *
+     * @param callable $fn
+     * @return object|array
+     * @throws ConditionNotAllowedException
+     */
+    public function map(callable $fn)
+    {
+        $this->prepare();
+        $data = [];
+        
+        foreach ($this->_map as $key => $val) {
+            $data[$key] = $fn($val);
+        }
+        
+        $this->_map = $data;
+
+        return $this;
+    }
 
     /**
      * pipe send output in next pipe
