@@ -39,7 +39,7 @@ trait Queriable
      *
      * @var array
      */
-    protected $_baseContents = [];
+    protected $_baseMap = [];
 
     /**
      * Stores all conditions.
@@ -108,7 +108,7 @@ trait Queriable
         if (!is_null($file)) {
             if (is_string($file) && file_exists($file)) {
                 $this->_map = $this->getDataFromFile($file);
-                $this->_baseContents = $this->_map;
+                $this->_baseMap = $this->_map;
                 return true;
             }
         }

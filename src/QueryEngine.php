@@ -3,11 +3,12 @@
 namespace Nahid\QArray;
 
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
+use Nahid\QArray\Exceptions\InvalidNodeException;
 use Nahid\QArray\Exceptions\InvalidQueryFunctionException;
-use Nahid\QArray\Exceptions\NullValueException;
+use Nahid\QArray\Exceptions\KeyNotPresentException;
 use function DeepCopy\deep_copy;
 
-abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
+abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
 {
     use Queriable;
     /**
@@ -52,7 +53,7 @@ abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
     /**
      * @param $key
      * @return mixed
-     * @throws NullValueException
+     * @throws KeyNotPresentException
      */
     public function __get($key)
     {
@@ -60,7 +61,7 @@ abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
             return $this->_map[$key];
         }
 
-        throw new NullValueException();
+        throw new KeyNotPresentException();
     }
 
     public function __set($key, $val)
@@ -75,11 +76,23 @@ abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
         return $this->_map;
     }
 
+    /**
+     * Implementation of ArrayAccess : check existence of the target offset
+     *
+     * @param mixed $key
+     * @return bool
+     */
     public function offsetExists($key)
     {
         return isset($this->_map[$key]);
     }
 
+    /**
+     * Implementation of ArrayAccess : Get the target offset
+     *
+     * @param mixed $key
+     * @return mixed|ValueNotFound
+     */
     public function offsetGet($key)
     {
         if ($this->offsetExists($key)) {
@@ -89,11 +102,22 @@ abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
         return new ValueNotFound();
     }
 
+    /**
+     * Implementation of ArrayAccess : Set the target offset
+     *
+     * @param mixed $key
+     * @param mixed $value
+     */
     public function offsetSet($key, $value)
     {
         $this->_map[$key] = $value;
     }
 
+    /**
+     * Implementation of ArrayAccess : Unset the target offset
+     *
+     * @param mixed $key
+     */
     public function offsetUnset($key)
     {
         if ($this->offsetExists($key)) {
@@ -199,14 +223,14 @@ abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
      *
      * @param null $node
      * @return $this
-     * @throws NullValueException
+     * @throws InvalidNodeException
      */
     public function from($node = null)
     {
         $this->_isProcessed = false;
 
         if (is_null($node) || $node == '') {
-            throw new NullValueException("Null node exception");
+            throw new InvalidNodeException();
         }
 
         $this->_node = $node;
@@ -219,7 +243,7 @@ abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
      *
      * @param null $node
      * @return $this
-     * @throws NullValueException
+     * @throws InvalidNodeException
      */
     public function at($node = null)
     {
@@ -364,7 +388,7 @@ abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
     public function reset($data = null, $fresh = false)
     {
         if (is_null($data)) {
-            $data = deep_copy($this->_baseContents);
+            $data = deep_copy($this->_baseMap);
         }
 
         if ($fresh) {
@@ -713,7 +737,7 @@ abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
      * @param string $path
      * @param array $column
      * @return mixed
-     * @throws NullValueException
+     * @throws InvalidNodeException
      * @throws ConditionNotAllowedException
      */
     public function find($path, $column = [])
@@ -836,7 +860,7 @@ abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
      *
      * @param string $node
      * @return QueryEngine
-     * @throws NullValueException
+     * @throws InvalidNodeException
      * @throws ConditionNotAllowedException
      */
     public function then($node)
@@ -875,7 +899,7 @@ abstract class QueryEngine implements \Countable, \Iterator, \ArrayAccess
     {
         $data = $this->objectToArray($data);
         $this->_map = deep_copy($data);
-        $this->_baseContents = deep_copy($data);
+        $this->_baseMap = deep_copy($data);
         $this->_isProcessed = false;
 
         return $this;
