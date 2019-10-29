@@ -203,6 +203,14 @@ trait Queriable
         return isset($arr[0]) && is_array($arr[0]);
     }
 
+
+    protected function isCollection($array)
+    {
+        if (!is_array($array)) return false;
+
+        return array_keys($array) === range(0, count($array) - 1);
+    }
+
     /**
      * Check given value is valid JSON
      *
@@ -309,7 +317,7 @@ trait Queriable
             return $this;
         }
 
-        if ($this->isMultiArray($data)) {
+        if ($this->isCollection($data)) {
             foreach ($data as $key => $val) {
                 $output[$key] = $this->instanceWithValue($val, ['_select' => $this->_select, '_except' => $this->_except]);
             }

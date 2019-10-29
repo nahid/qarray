@@ -29,10 +29,9 @@ abstract class QueryEngine implements \Countable, \Iterator
      */
     public function __construct($data = null)
     {
-        if (is_file($data) || filter_var($data, FILTER_VALIDATE_URL)) {
-            if (file_exists($data)) {
-                $this->collect($this->readPath($data));
-            }
+        if ((is_file($data) && file_exists($data)) || filter_var($data, FILTER_VALIDATE_URL)) {
+            $this->collect($this->readPath($data));
+
         } else {
             $this->collect($this->parseData($data));
         }
