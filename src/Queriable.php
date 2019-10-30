@@ -412,7 +412,7 @@ trait Queriable
             $path = explode($this->_traveler, $node);
 
             foreach ($path as $val) {
-                if (!is_array($val)) return $val;
+                if (!is_array($map)) return $map;
 
                 if (!array_key_exists($val, $map)) {
                     $terminate = true;

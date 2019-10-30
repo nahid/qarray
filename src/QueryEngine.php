@@ -323,7 +323,6 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->setSelect($column);
         $this->prepare();
-
         return $this->prepareResult($this->_map);
     }
 
