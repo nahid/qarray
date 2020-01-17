@@ -92,6 +92,7 @@ trait Queriable
         'year' => 'yearEqual',
         'instance'  => 'instance',
         'any'  => 'any',
+        'fn' => 'execFunction'
     ];
 
 
@@ -276,6 +277,9 @@ trait Queriable
 
     protected function tunnel($value, $fns)
     {
+        if (!$value) {
+            return $value;
+        }
         array_map(function($fn) use(&$value){
             $value = $this->callQueryFunction($value, $fn);
         }, $fns);
@@ -317,21 +321,30 @@ trait Queriable
             return $this;
         }
 
-        if ($this->isCollection($data) && $this->isMultiArray($data)) {
-            foreach ($data as $key => $val) {
-                $output[$key] = $this->instanceWithValue($val, ['_select' => $this->_select, '_except' => $this->_except]);
-            }
-        } elseif (is_array($data) && count($data) != 0) {
-           // $value = json_decode(json_encode($this->takeColumn($data)), true);
-            //$output = $this->instanceWithValue($data, ['_select' => $this->_select, '_except' => $this->_except]);
-            $output = $this->takeColumn($data);
-        } else {
-            $output = $data;
+        if (!is_array($data)) {
+            $this->_map = $data;
+
+            return $this;
+        }
+
+        foreach ($data as $key => $val) {
+            $output[$key] = $this->generateResultData($val);
         }
 
         $this->_map = $output;
 
         return $this;
+    }
+
+    protected function generateResultData($data)
+    {
+        $output = $data;
+
+        if (is_array($data)) {
+            $output = $this->instanceWithValue($data, ['_select' => $this->_select, '_except' => $this->_except]);
+        }
+
+        return $output;
     }
 
     /**
@@ -458,15 +471,29 @@ trait Queriable
             foreach ($conditions as $cond) {
                 $tmp = true;
                 foreach ($cond as $rule) {
-                    $function = $this->makeConditionalFunction($rule['condition']);
+                    $params = [];
+                    $function = null;
                     $value = $this->getFromNested($val, $rule['key']);
+                    $value = $this->tunnel($value, $rule['function']);
+
+                    if (!is_callable($rule['condition'])) {
+                        $function = $this->makeConditionalFunctionFromOperator($rule['condition']);
+                        $params = [$value, $rule['value']];
+                    }
+
+                    if (is_callable($rule['condition'])) {
+                        $function = $rule['condition'];
+                        $params = [$value, $val];
+                    }
 
                     if ($value instanceof ValueNotFound) {
                         $return = false;
-                    } else {
-                        $value = $this->tunnel($value, $rule['function']);
-                        $return = call_user_func_array($function, [$value, $rule['value']]);
                     }
+
+                    if (! $value instanceof ValueNotFound) {
+                        $return = call_user_func_array($function, $params);
+                    }
+
                     //$return = $value instanceof ValueNotFound ? false :  call_user_func_array($function, [$value, $rule['value']]);
                     $tmp &= $return;
                 }
@@ -483,7 +510,7 @@ trait Queriable
      * @return array
      * @throws ConditionNotAllowedException
      */
-    protected function makeConditionalFunction($condition)
+    protected function makeConditionalFunctionFromOperator($condition)
     {
         if (!isset(self::$_rulesMap[$condition])) {
             throw new ConditionNotAllowedException("Exception: {$condition} condition not allowed");
@@ -539,9 +566,13 @@ trait Queriable
      */
     public function where($key, $condition = null, $value = null)
     {
-        if (!is_null($condition) && is_null($value)) {
+        if (!is_null($condition) && !is_callable($condition) && is_null($value)) {
             $value = $condition;
             $condition = '=';
+        }
+
+        if (is_callable($condition) && is_null($value)) {
+            $value = null;
         }
 
         if (count($this->_conditions) < 1) {
@@ -750,17 +781,13 @@ trait Queriable
      */
     public function whereDate($key, $condition, $value = null)
     {
-        $key = ':unix_date()=>' . $key;
-        if (is_null($value)) {
-            $value = $condition;
-            $condition = '=';
-        }
+        return $this->where($key, function($columnValue, $row) use ($value, $condition) {
+            $columnValue = date('Y-m-d', strtotime($columnValue));
 
-        $value = strtotime($value);
+            $function = $this->makeConditionalFunctionFromOperator($condition);
 
-        $this->where($key, $condition, $value);
-
-        return $this;
+            return call_user_func_array($function, [$columnValue, $value]);
+        });
     }
 
     /**
@@ -773,15 +800,13 @@ trait Queriable
      */
     public function whereMonth($key, $condition, $value)
     {
-        $key = ':month()=>' . $key;
-        if (is_null($value)) {
-            $value = $condition;
-            $condition = '=';
-        }
+        return $this->where($key, function($columnValue, $row) use ($value, $condition) {
+            $columnValue = date('m', strtotime($columnValue));
 
-        $this->where($key, $condition, $value);
+            $function = $this->makeConditionalFunctionFromOperator($condition);
 
-        return $this;
+            return call_user_func_array($function, [$columnValue, $value]);
+        });
     }
 
     /**
@@ -794,15 +819,13 @@ trait Queriable
      */
     public function whereYear($key, $condition, $value)
     {
-        $key = ':year()=>' . $key;
-        if (is_null($value)) {
-            $value = $condition;
-            $condition = '=';
-        }
+        return $this->where($key, function($columnValue, $row) use ($value, $condition) {
+            $columnValue = date('Y', strtotime($columnValue));
 
-        $this->where($key, $condition, $value);
+            $function = $this->makeConditionalFunctionFromOperator($condition);
 
-        return $this;
+            return call_user_func_array($function, [$columnValue, $value]);
+        });
     }
 
     /**
@@ -842,15 +865,16 @@ trait Queriable
      */
     public function whereCount($key, $condition, $value = null)
     {
-        $key = '$count()=>' . $key;
-        if (is_null($value)) {
-            $value = $condition;
-            $condition = '=';
-        }
+        return $this->where($key, function($columnValue, $row) use ($value, $condition) {
+            $count = 0;
+            if (is_array($columnValue)) {
+                $count = count($columnValue);
+            }
 
-        $this->where($key, $condition, $value);
+            $function = $this->makeConditionalFunctionFromOperator($condition);
 
-        return $this;
+            return call_user_func_array($function, [$count, $value]);
+        });
     }
 
     /**

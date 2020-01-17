@@ -308,4 +308,21 @@ class Condition
 
         return false;
     }
+
+    /**
+     * is given value exits in given key of array
+     *
+     * @param string $value
+     * @param string $comparable
+     *
+     * @return bool
+     */
+    public static function execFunction($value, $comparable)
+    {
+        if (is_array($value)) {
+            return in_array($comparable, $value);
+        }
+
+        return false;
+    }
 }
