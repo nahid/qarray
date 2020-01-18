@@ -38,6 +38,17 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     }
 
     /**
+     * return json string when echoing the instance
+     *
+     * @return string
+     * @throws ConditionNotAllowedException
+     */
+    public function __toString()
+    {
+        return $this->toJson();
+    }
+
+    /**
      * @param string $path
      * @return array
      */
@@ -252,7 +263,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     /**
      * select desired column
      *
-     * @param ... scalar
+     * @param array $columns
      * @return $this
      */
     public function select($columns = [])
@@ -266,6 +277,11 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
         return $this;
     }
 
+    /**
+     * setter for select columns
+     *
+     * @param array $columns
+     */
     protected function setSelect($columns = [])
     {
         if (count($columns) <= 0 ) {
@@ -499,7 +515,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     /**
      * sum prepared data
      * @param int $column
-     * @return int
+     * @return number
      * @throws ConditionNotAllowedException
      */
     public function sum($column = null)
@@ -527,7 +543,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      * getting max value from prepared data
      *
      * @param int $column
-     * @return int
+     * @return number
      * @throws ConditionNotAllowedException
      */
     public function max($column = null)
@@ -550,7 +566,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      * getting min value from prepared data
      *
      * @param int $column
-     * @return string
+     * @return number
      * @throws ConditionNotAllowedException
      */
     public function min($column = null)
@@ -574,7 +590,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      * getting average value from prepared data
      *
      * @param int $column
-     * @return string
+     * @return number
      * @throws ConditionNotAllowedException
      */
     public function avg($column = null)
@@ -711,13 +727,16 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function sort($order = 'asc')
     {
+        $this->_data = convert_to_array($this->_data);
+
         if ($order == 'desc') {
             rsort($this->_data);
         }else{
             sort($this->_data);
         }
 
-        return $this;
+        return $this->prepareResult($this->_data);
+
     }
 
     /**
@@ -736,7 +755,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
 
     public function result()
     {
-        return $this->_data;
+        return convert_to_array($this->_data);
     }
 
     /**
@@ -764,10 +783,13 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     public function transform(callable $fn)
     {
         $this->prepare();
+        $data = [];
 
         foreach ($this->_data as $key => $val) {
-            $fn($val);
+            $data[$key] = $fn($val);
         }
+
+        $this->_data = $data;
 
         return $this;
     }
@@ -789,9 +811,9 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
             $data[$key] = $fn($val);
         }
         
-        $this->_data = $data;
+        $instance = deep_copy($this);
 
-        return $this;
+        return $instance->collect($data);
     }
 
     /**
@@ -841,7 +863,6 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
         }
 
         return $this->prepareResult($data);
-
     }
 
     /**
@@ -899,7 +920,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      *
      * @param string|array $key
      * @param string $delimiter
-     * @return string|array
+     * @return self
      * @throws ConditionNotAllowedException
      */
     public function implode($key, $delimiter = ',')
@@ -908,7 +929,9 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
 
         $implode = [];
         if (is_string($key)) {
-            return $this->makeImplode($key, $delimiter);
+            $this->_data = $this->makeImplode($key, $delimiter);
+
+            return $this;
         }
 
         if (is_array($key)) {
@@ -917,9 +940,13 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
                 $implode[$k] = $imp;
             }
 
-            return $implode;
+            $this->_data = $implode;
+
+            return $this;
         }
-        return '';
+        $this->_data = '';
+
+        return $this;
     }
 
     /**
@@ -928,6 +955,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      * @param string $key
      * @param string $delimiter
      * @return string|null
+     * @throws \Exception
      */
     protected function makeImplode($key, $delimiter)
     {
