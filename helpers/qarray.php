@@ -1,6 +1,7 @@
 <?php
 
 use Nahid\QArray\QueryEngine;
+use Nahid\QArray\ArrayQuery;
 
 if (!function_exists('convert_to_array')) {
     function convert_to_array($data)
@@ -15,5 +16,24 @@ if (!function_exists('convert_to_array')) {
         }
 
         return $new_data;
+    }
+}
+
+if (!function_exists('qarray')) {
+    /**
+     * @param $data
+     * @return \Nahid\QArray\QueryEngine
+     */
+    function qarray($data = [])
+    {
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        if (! ArrayQuery::$qarray instanceof QueryEngine) {
+            return new ArrayQuery($data);
+        }
+
+        return ArrayQuery::$qarray->collect($data);
     }
 }

@@ -256,57 +256,48 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      * @param ... scalar
      * @return $this
      */
-    public function select()
+    public function select($columns = [])
     {
-        $args = func_get_args();
-        if (count($args) > 0 ){
-            $this->setSelect($args);
-            //$this->_select = $args;
+        if (!is_array($columns)) {
+            $columns = func_get_args();
         }
+
+        $this->setSelect($columns);
 
         return $this;
     }
 
     protected function setSelect($columns = [])
     {
-        foreach($columns as $column) {
-            $keys = $this->getFunctions($column);
-            $this->_select[$keys['key']] = $keys['fn'];
-        }
-    }
-
-    protected function getFunctions($string)
-    {
-        $function = [];
-        $key = $string;
-        if (preg_match('/^\:((([a-zA-Z0-9_]+)\(\)\|?)*)\=\>(\V+)$/', $key, $matches)) {
-            $fns = explode('|', $matches[1]);
-            $function = array_map(function($val) {
-                $func = rtrim($val, '()');
-                if (!QueryFunction::hasFunction($func)) {
-                    throw new InvalidQueryFunctionException($func);
-                }
-
-                return $func;
-            }, $fns);
-
-            $key = $matches[4];
+        if (count($columns) <= 0 ) {
+            return;
         }
 
-        return ['key' => $key, 'fn' => $function];
+        foreach ($columns as $key => $column) {
+            if (is_string($column)) {
+                $this->_select[$column] = $key;
+            } elseif(is_callable($column)) {
+                $this->_select[$key] = $column;
+            } else {
+               $this->_select[$column] = $key;
+            }
+        }
     }
 
     /**
      * select desired column for except
      *
-     * @param ... scalar
+     * @param array $columns
      * @return $this
      */
-    public function except()
+    public function except($columns = [])
     {
-        $args = func_get_args();
-        if (count($args) > 0 ){
-            $this->_except = $args;
+        if (count($columns) <= 0) {
+            $columns = func_get_args();
+        }
+
+        if (count($columns) > 0 ){
+            $this->_except = $columns;
         }
 
         return $this;

@@ -263,28 +263,19 @@ trait Queriable
         $columns = array_intersect_key($array, array_flip((array) $select));
         $row = [];
         foreach ($columns as $column=>$val) {
+            $fn = null;
             if (array_key_exists($column, $keys)) {
-                $fns = $keys[$column];
-                $fns = array_reverse($fns);
-                $val = $this->tunnel($val, $fns);
+                $fn = $keys[$column];
+            }
+
+            if (is_callable($fn)) {
+                $val = call_user_func_array($fn, [$val, $array]);
             }
 
             $row[$column] = $val;
         }
 
         return $row;
-    }
-
-    protected function tunnel($value, $fns)
-    {
-        if (!$value) {
-            return $value;
-        }
-        array_map(function($fn) use(&$value){
-            $value = $this->callQueryFunction($value, $fn);
-        }, $fns);
-
-        return $value;
     }
 
 
@@ -474,7 +465,6 @@ trait Queriable
                     $params = [];
                     $function = null;
                     $value = $this->getFromNested($val, $rule['key']);
-                    $value = $this->tunnel($value, $rule['function']);
 
                     if (!is_callable($rule['condition'])) {
                         $function = $this->makeConditionalFunctionFromOperator($rule['condition']);
@@ -526,34 +516,6 @@ trait Queriable
         }
 
         return $function;
-    }
-
-    /**
-     * @param $value
-     * @param $func
-     * @return mixed
-     */
-    protected function callQueryFunction($value, $func)
-    {
-        if (!is_null($func) && $functionable = QueryFunction::hasFunction($func)) {
-            $callable_function = $functionable;
-            if (is_callable($functionable, false, $fn_name)) {
-                if ($fn_name != 'Closure::__invoke') {
-                    $functionable = $fn_name;
-                }
-            }
-
-            if (is_string($functionable)) {
-                $callable_function = [QueryFunction::class, $functionable];
-            }
-
-            if (isset($callable_function)) {
-                $value = call_user_func_array($callable_function, [$value]);
-            }
-
-        }
-
-        return $value;
     }
 
     /**
@@ -619,13 +581,10 @@ trait Queriable
 //            return $this;
 //        }
 
-        $keys = $this->getFunctions($key);
-
         array_push($current, [
-            'key' => $keys['key'],
+            'key' => $key,
             'condition' => $condition,
-            'value' => $value,
-            'function'  => $keys['fn'],
+            'value' => $value
         ]);
 
         $this->_conditions[$index] = $current;
