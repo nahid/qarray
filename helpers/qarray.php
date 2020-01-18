@@ -30,10 +30,10 @@ if (!function_exists('qarray')) {
             $data = [];
         }
 
-        if (! ArrayQuery::$qarray instanceof QueryEngine) {
-            return new ArrayQuery($data);
+        if (! ArrayQuery::$instance instanceof QueryEngine) {
+            ArrayQuery::$instance = new ArrayQuery();
         }
 
-        return ArrayQuery::$qarray->collect($data);
+        return ArrayQuery::$instance->collect($data);
     }
 }

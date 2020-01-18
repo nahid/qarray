@@ -4,7 +4,6 @@ namespace Nahid\QArray;
 
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\InvalidNodeException;
-use Nahid\QArray\Exceptions\InvalidQueryFunctionException;
 use Nahid\QArray\Exceptions\KeyNotPresentException;
 use function DeepCopy\deep_copy;
 
@@ -57,8 +56,8 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function __get($key)
     {
-        if (isset($this->_map[$key]) or is_null($this->_map[$key])) {
-            return $this->_map[$key];
+        if (isset($this->_data[$key]) or is_null($this->_data[$key])) {
+            return $this->_data[$key];
         }
 
         throw new KeyNotPresentException();
@@ -66,14 +65,14 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
 
     public function __set($key, $val)
     {
-        if (is_array($this->_map)) {
-            $this->_map[$key] = $val;
+        if (is_array($this->_data)) {
+            $this->_data[$key] = $val;
         }
     }
 
     public function __invoke()
     {
-        return $this->_map;
+        return $this->_data;
     }
 
     /**
@@ -84,7 +83,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function offsetExists($key)
     {
-        return isset($this->_map[$key]);
+        return isset($this->_data[$key]);
     }
 
     /**
@@ -96,7 +95,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     public function offsetGet($key)
     {
         if ($this->offsetExists($key)) {
-            return $this->_map[$key];
+            return $this->_data[$key];
         }
 
         return new ValueNotFound();
@@ -110,7 +109,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function offsetSet($key, $value)
     {
-        $this->_map[$key] = $value;
+        $this->_data[$key] = $value;
     }
 
     /**
@@ -121,7 +120,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     public function offsetUnset($key)
     {
         if ($this->offsetExists($key)) {
-           unset($this->_map[$key]);
+           unset($this->_data[$key]);
         }
     }
 
@@ -132,7 +131,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function rewind()
     {
-        return reset($this->_map);
+        return reset($this->_data);
     }
 
     /**
@@ -141,7 +140,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function current()
     {
-        return current($this->_map);
+        return current($this->_data);
     }
 
     /**
@@ -151,7 +150,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function key()
     {
-        return key($this->_map);
+        return key($this->_data);
     }
 
     /**
@@ -161,7 +160,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function next()
     {
-        return next($this->_map);
+        return next($this->_data);
     }
 
     /**
@@ -171,7 +170,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function valid()
     {
-        return key($this->_map) !== null;
+        return key($this->_data) !== null;
     }
 
     /**
@@ -195,8 +194,8 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     protected function fresh($props = [])
     {
         $properties = [
-            '_map'  => [],
-            '_baseContents' => [],
+            '_data'  => [],
+            '_baseData' => [],
             '_select' => [],
             '_isProcessed' => false,
             '_node' => '',
@@ -292,7 +291,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function except($columns = [])
     {
-        if (count($columns) <= 0) {
+        if (!is_array($columns)) {
             $columns = func_get_args();
         }
 
@@ -314,7 +313,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->setSelect($column);
         $this->prepare();
-        return $this->prepareResult($this->_map);
+        return $this->prepareResult($this->_data);
     }
 
     /**
@@ -365,11 +364,11 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->prepare();
 
-        return (!empty($this->_map) && !is_null($this->_map));
+        return (!empty($this->_data) && !is_null($this->_data));
     }
 
     /**
-     * reset given data to the $_map
+     * reset given data to the $_data
      *
      * @param mixed $data
      * @param bool $fresh
@@ -378,7 +377,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     public function reset($data = null, $fresh = false)
     {
         if (is_null($data)) {
-            $data = deep_copy($this->_baseMap);
+            $data = deep_copy($this->_baseData);
         }
 
         if ($fresh) {
@@ -407,14 +406,14 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
         $this->prepare();
 
         $data = [];
-        foreach ($this->_map as $map) {
+        foreach ($this->_data as $map) {
             $value = $this->getFromNested($map, $column);
             if ($value) {
                 $data[$value][] = $map;
             }
         }
 
-        $this->_map = $data;
+        $this->_data = $data;
         return $this;
     }
 
@@ -431,7 +430,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
         $this->prepare();
 
         $data = [];
-        foreach ($this->_map as $map) {
+        foreach ($this->_data as $map) {
             $value = $this->getFromNested($map, $column);
             if (!$value) {
                 continue;
@@ -444,7 +443,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
             }
         }
 
-        $this->_map = $data;
+        $this->_data = $data;
         return $this;
     }
 
@@ -461,14 +460,14 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
         $this->prepare();
 
         $data = [];
-        foreach ($this->_map as $map) {
+        foreach ($this->_data as $map) {
             $value = $this->getFromNested($map, $column);
             if ($value && !array_key_exists($value, $data)) {
                 $data[$value] = $map;
             }
         }
 
-        $this->_map = array_values($data);
+        $this->_data = array_values($data);
         return $this;
     }
 
@@ -483,7 +482,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->prepare();
 
-        return count($this->_map);
+        return count($this->_data);
     }
 
     /**
@@ -599,12 +598,12 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->prepare();
 
-        $data = $this->_map;
+        $data = $this->_data;
         $this->setSelect($column);
 
         if (count($data) > 0) {
             $data = $this->toArray();
-            $this->_map = reset($data);
+            $this->_data = reset($data);
             return $this;
         }
 
@@ -622,7 +621,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->prepare();
 
-        $data = $this->_map;
+        $data = $this->_data;
         $this->setSelect($column);
 
         if (count($data) > 0) {
@@ -644,12 +643,12 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->prepare();
 
-        $data = $this->_map;
+        $data = $this->_data;
         $this->setSelect($column);
         $total_elm = count($data);
         $idx =  abs($index);
 
-        if (!is_integer($index) || $total_elm < $idx || $index == 0 || !is_array($this->_map)) {
+        if (!is_integer($index) || $total_elm < $idx || $index == 0 || !is_array($this->_data)) {
             return null;
         }
 
@@ -674,11 +673,11 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->prepare();
 
-        if (!is_array($this->_map)) {
+        if (!is_array($this->_data)) {
             return $this;
         }
 
-        usort($this->_map, function ($a, $b) use ($column, $order) {
+        usort($this->_data, function ($a, $b) use ($column, $order) {
             $val1 = $this->getFromNested($a, $column);
             $val2 = $this->getFromNested($b, $column);
             if (is_string($val1)) {
@@ -713,9 +712,9 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     public function sort($order = 'asc')
     {
         if ($order == 'desc') {
-            rsort($this->_map);
+            rsort($this->_data);
         }else{
-            sort($this->_map);
+            sort($this->_data);
         }
 
         return $this;
@@ -737,7 +736,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
 
     public function result()
     {
-        return $this->_map;
+        return $this->_data;
     }
 
     /**
@@ -750,7 +749,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->prepare();
 
-        foreach ($this->_map as $key => $val) {
+        foreach ($this->_data as $key => $val) {
             $fn($key, $val);
         }
     }
@@ -766,7 +765,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->prepare();
 
-        foreach ($this->_map as $key => $val) {
+        foreach ($this->_data as $key => $val) {
             $fn($val);
         }
 
@@ -786,11 +785,11 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
         $this->prepare();
         $data = [];
         
-        foreach ($this->_map as $key => $val) {
+        foreach ($this->_data as $key => $val) {
             $data[$key] = $fn($val);
         }
         
-        $this->_map = $data;
+        $this->_data = $data;
 
         return $this;
     }
@@ -810,11 +809,11 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
         if (is_string($fn) && !is_null($class)) {
             $instance = new $class;
 
-            $this->_map = call_user_func_array([$instance, $fn], [$this]);
+            $this->_data = call_user_func_array([$instance, $fn], [$this]);
             return $this;
         }
 
-        $this->_map = $fn($this);
+        $this->_data = $fn($this);
         return $this;
     }
 
@@ -831,7 +830,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
         $this->prepare();
 
         $data = [];
-        foreach ($this->_map as $k => $val) {
+        foreach ($this->_data as $k => $val) {
             if ($fn($val)) {
                 if ($key) {
                     $data[$k] = $val;
@@ -855,7 +854,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function then($node)
     {
-        $this->_map = $this->prepare()->first(false);
+        $this->_data = $this->prepare()->first(false);
 
         $this->from($node);
 
@@ -888,8 +887,8 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     public function collect($data)
     {
         $data = $this->objectToArray($data);
-        $this->_map = deep_copy($data);
-        $this->_baseMap = deep_copy($data);
+        $this->_data = deep_copy($data);
+        $this->_baseData = deep_copy($data);
         $this->_isProcessed = false;
 
         return $this;
@@ -975,7 +974,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     public function toArray()
     {
         $this->prepare();
-        $maps = $this->_map;
+        $maps = $this->_data;
         return convert_to_array($maps);
     }
 
@@ -989,7 +988,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->prepare();
 
-        return array_keys($this->_map);
+        return array_keys($this->_data);
     }
 
     /**
@@ -1017,7 +1016,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $this->prepare();
 
-        $chunk_value = array_chunk($this->_map, $amount);
+        $chunk_value = array_chunk($this->_data, $amount);
         $chunks = [];
 
         if (!is_null($fn) && is_callable($fn)) {

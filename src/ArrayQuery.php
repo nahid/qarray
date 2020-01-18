@@ -9,9 +9,9 @@ class ArrayQuery extends QueryEngine
     /**
      * @var null|QueryEngine
      */
-    public static $qarray = null;
+    public static $instance = null;
 
-    public function __construct($data)
+    public function __construct($data = [])
     {
         if (is_array($data)) {
             $this->collect($data);

@@ -5,7 +5,6 @@ namespace Nahid\QArray;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\FileNotFoundException;
 use Nahid\QArray\Exceptions\InvalidJsonException;
-use Nahid\QArray\Exceptions\InvalidQueryFunctionException;
 use Nahid\QArray\ValueNotFound;
 
 trait Queriable
@@ -20,7 +19,7 @@ trait Queriable
      * contain prepared data for process
      * @var mixed
      */
-    protected $_map;
+    protected $_data;
 
     /**
      * contains column names
@@ -39,7 +38,7 @@ trait Queriable
      *
      * @var array
      */
-    protected $_baseMap = [];
+    protected $_baseData = [];
 
     /**
      * Stores all conditions.
@@ -108,8 +107,8 @@ trait Queriable
     {
         if (!is_null($file)) {
             if (is_string($file) && file_exists($file)) {
-                $this->_map = $this->getDataFromFile($file);
-                $this->_baseMap = $this->_map;
+                $this->_data = $this->getDataFromFile($file);
+                $this->_baseData = $this->_data;
                 return true;
             }
         }
@@ -135,7 +134,7 @@ trait Queriable
                 $calculatedData = array_slice($calculatedData, $this->_offset, $this->_take);
             }
 
-            $this->_map = $this->objectToArray($calculatedData);
+            $this->_data = $this->objectToArray($calculatedData);
 
             $this->_conditions = [];
             $this->_node = '';
@@ -145,10 +144,10 @@ trait Queriable
 
         $this->_isProcessed = true;
         if (!is_null($this->_take)) {
-            $this->_map = array_slice($this->_map, $this->_offset, $this->_take);
+            $this->_data = array_slice($this->_data, $this->_offset, $this->_take);
         }
 
-        $this->_map = $this->objectToArray($this->getData());
+        $this->_data = $this->objectToArray($this->getData());
         return $this;
     }
 
@@ -216,11 +215,11 @@ trait Queriable
      * Check given value is valid JSON
      *
      * @param string $value
-     * @param bool $isReturnMap
+     * @param bool $isReturnData
      *
      * @return bool|array
      */
-    public function isJson($value, $isReturnMap = false)
+    public function isJson($value, $isReturnData = false)
     {
         if (is_array($value) || is_object($value)) {
             return false;
@@ -232,7 +231,7 @@ trait Queriable
             return false;
         }
 
-        return $isReturnMap ? $data : true;
+        return $isReturnData ? $data : true;
     }
 
     /**
@@ -308,12 +307,12 @@ trait Queriable
         $output = [];
 
         if (is_null($data) || is_scalar($data)) {
-            $this->_map = $data;
+            $this->_data = $data;
             return $this;
         }
 
         if (!is_array($data)) {
-            $this->_map = $data;
+            $this->_data = $data;
 
             return $this;
         }
@@ -322,7 +321,7 @@ trait Queriable
             $output[$key] = $this->generateResultData($val);
         }
 
-        $this->_map = $output;
+        $this->_data = $output;
 
         return $this;
     }
@@ -401,14 +400,14 @@ trait Queriable
     /**
      * Get data from nested array
      *
-     * @param $map array
+     * @param $data array
      * @param $node string
      * @return bool|array|mixed
      */
-    protected function getFromNested($map, $node)
+    protected function getFromNested($data, $node)
     {
         if (empty($node) || $node == $this->_traveler) {
-            return $map;
+            return $data;
         }
 
         if ($node) {
@@ -416,21 +415,21 @@ trait Queriable
             $path = explode($this->_traveler, $node);
 
             foreach ($path as $val) {
-                if (!is_array($map)) return $map;
+                if (!is_array($data)) return $data;
 
-                if (!array_key_exists($val, $map)) {
+                if (!array_key_exists($val, $data)) {
                     $terminate = true;
                     break;
                 }
 
-                $map = &$map[$val];
+                $data = &$data[$val];
             }
 
             if ($terminate) {
                 return new ValueNotFound();
             }
 
-            return $map;
+            return $data;
         }
 
         return new ValueNotFound();
@@ -443,7 +442,7 @@ trait Queriable
      */
     protected function getData()
     {
-        return $this->getFromNested($this->_map, $this->_node);
+        return $this->getFromNested($this->_data, $this->_node);
     }
 
     /**
@@ -570,16 +569,11 @@ trait Queriable
      * @param string $condition
      * @param mixed $value
      * @return $this
-     * @throws InvalidQueryFunctionException
      */
     protected function makeWhere($key, $condition = null, $value = null)
     {
         $current = end($this->_conditions);
         $index = key($this->_conditions);
-//        if (is_callable($key)) {
-//            $key($this);
-//            return $this;
-//        }
 
         array_push($current, [
             'key' => $key,
