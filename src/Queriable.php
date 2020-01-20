@@ -450,29 +450,27 @@ trait Queriable
         $data = $this->getData();
         $conditions = $this->_conditions;
 
-        return array_filter($data, function ($val) use ($conditions) {
-            $decision = false;
-
-            return $this->applyConditions($conditions, $val, $decision);
+        return array_filter($data, function ($data) use ($conditions) {
+            return $this->applyConditions($conditions, $data);
         });
     }
 
     /**
      * @param $conditions
-     * @param $val
-     * @param $finalDecision
+     * @param $data
      * @return bool
      * @throws ConditionNotAllowedException
      */
-    protected function applyConditions($conditions, $val, &$finalDecision)
+    protected function applyConditions($conditions, $data)
     {
+        $decision = false;
         foreach ($conditions as $cond) {
             $orDecision = true;
-            $this->processEachCondition($cond, $val, $orDecision);
-            $finalDecision |= $orDecision;
+            $this->processEachCondition($cond, $data, $orDecision);
+            $decision |= $orDecision;
         }
 
-        return $finalDecision;
+        return $decision;
     }
 
     /**
