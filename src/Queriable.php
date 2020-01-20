@@ -91,7 +91,6 @@ trait Queriable
         'year' => 'yearEqual',
         'instance'  => 'instance',
         'any'  => 'any',
-        'fn' => 'execFunction'
     ];
 
 
@@ -261,7 +260,7 @@ trait Queriable
         $select = array_keys($keys);
         $columns = array_intersect_key($array, array_flip((array) $select));
         $row = [];
-        foreach ($columns as $column=>$val) {
+        foreach ($columns as $column => $val) {
             $fn = null;
             if (array_key_exists($column, $keys)) {
                 $fn = $keys[$column];
@@ -718,7 +717,6 @@ trait Queriable
      */
     public function whereLike($key, $value)
     {
-        $key = '$lowercase=>' . $key;
         $this->where($key, 'contains', strtolower($value));
 
         return $this;

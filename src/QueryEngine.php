@@ -21,9 +21,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     protected $_take = null;
 
     /**
-     * this constructor set main json file path
-     * otherwise create it and read file contents
-     * and decode as an array and store it in $this->_data
+     * this constructor read data from file and parse the data for query
      *
      * @param string $data
      */
@@ -83,7 +81,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
 
     public function __invoke()
     {
-        return $this->_data;
+        return $this->toArray();
     }
 
     /**
@@ -327,6 +325,10 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function get($column = [])
     {
+        if (!is_array($column)) {
+            $column = func_get_args();
+        }
+
         $this->setSelect($column);
         $this->prepare();
         return $this->prepareResult($this->_data);
@@ -1036,7 +1038,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      * getting chunk values from prepared data
      *
      * @param int $amount
-     * @param $fn
+     * @param callable $fn
      * @return object|array|bool
      * @throws ConditionNotAllowedException
      */
