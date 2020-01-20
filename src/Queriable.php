@@ -128,7 +128,7 @@ trait Queriable
         }
 
         if (count($this->_conditions) > 0) {
-            $calculatedData = $this->processConditions();
+            $calculatedData = $this->processQuery();
             if (!is_null($this->_take)) {
                 $calculatedData = array_slice($calculatedData, $this->_offset, $this->_take);
             }
@@ -409,29 +409,27 @@ trait Queriable
             return $data;
         }
 
-        if ($node) {
-            $terminate = false;
-            $path = explode($this->_traveler, $node);
+        if (!$node) return new ValueNotFound();
 
-            foreach ($path as $val) {
-                if (!is_array($data)) return $data;
+        $terminate = false;
+        $path = explode($this->_traveler, $node);
 
-                if (!array_key_exists($val, $data)) {
-                    $terminate = true;
-                    break;
-                }
+        foreach ($path as $val) {
+            if (!is_array($data)) return $data;
 
-                $data = &$data[$val];
+            if (!array_key_exists($val, $data)) {
+                $terminate = true;
+                break;
             }
 
-            if ($terminate) {
-                return new ValueNotFound();
-            }
-
-            return $data;
+            $data = &$data[$val];
         }
 
-        return new ValueNotFound();
+        if ($terminate) {
+            return new ValueNotFound();
+        }
+
+        return $data;
     }
 
     /**
@@ -450,47 +448,64 @@ trait Queriable
      * @return array|string|object
      * @throws ConditionNotAllowedException
      */
-    protected function processConditions()
+    protected function processQuery()
     {
         $data = $this->getData();
         $conditions = $this->_conditions;
 
-        $result = array_filter($data, function ($val) use ($conditions) {
-            $res = false;
-            foreach ($conditions as $cond) {
-                $tmp = true;
-                foreach ($cond as $rule) {
-                    $params = [];
-                    $function = null;
-                    $value = $this->getFromNested($val, $rule['key']);
+        return array_filter($data, function ($val) use ($conditions) {
+            $decision = false;
 
-                    if (!is_callable($rule['condition'])) {
-                        $function = $this->makeConditionalFunctionFromOperator($rule['condition']);
-                        $params = [$value, $rule['value']];
-                    }
-
-                    if (is_callable($rule['condition'])) {
-                        $function = $rule['condition'];
-                        $params = [$value, $val];
-                    }
-
-                    if ($value instanceof ValueNotFound) {
-                        $return = false;
-                    }
-
-                    if (! $value instanceof ValueNotFound) {
-                        $return = call_user_func_array($function, $params);
-                    }
-
-                    //$return = $value instanceof ValueNotFound ? false :  call_user_func_array($function, [$value, $rule['value']]);
-                    $tmp &= $return;
-                }
-                $res |= $tmp;
-            }
-            return $res;
+            return $this->applyConditions($conditions, $val, $decision);
         });
+    }
 
-        return $result;
+    protected function applyConditions($conditions, $val, &$finalDecision)
+    {
+        foreach ($conditions as $cond) {
+            $orDecision = true;
+            $this->processEachCondition($cond, $val, $orDecision);
+            $finalDecision |= $orDecision;
+        }
+
+        return $finalDecision;
+    }
+
+    protected function processEachCondition($rules, $data, &$orDecision)
+    {
+        if (!is_array($rules)) return false;
+
+        $andDecision = true;
+
+        foreach ($rules as $rule) {
+            $params = [];
+            $function = null;
+            $value = $this->getFromNested($data, $rule['key']);
+
+            if (!is_callable($rule['condition'])) {
+                $function = $this->makeConditionalFunctionFromOperator($rule['condition']);
+                $params = [$value, $rule['value']];
+            }
+
+            if (is_callable($rule['condition'])) {
+                $function = $rule['condition'];
+                $params = [$value, $data];
+            }
+
+            if ($value instanceof ValueNotFound) {
+                $andDecision = false;
+            }
+
+            if (! $value instanceof ValueNotFound) {
+                $andDecision = call_user_func_array($function, $params);
+            }
+
+            //$andDecision = $value instanceof ValueNotFound ? false :  call_user_func_array($function, [$value, $rule['value']]);
+            $orDecision &= $andDecision;
+        }
+
+        return $orDecision;
+
     }
 
     /**
