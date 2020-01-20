@@ -443,10 +443,7 @@ trait Queriable
     }
 
     /**
-     * process AND and OR conditions
-     *
-     * @return array|string|object
-     * @throws ConditionNotAllowedException
+     * @return array
      */
     protected function processQuery()
     {
@@ -460,6 +457,13 @@ trait Queriable
         });
     }
 
+    /**
+     * @param $conditions
+     * @param $val
+     * @param $finalDecision
+     * @return bool
+     * @throws ConditionNotAllowedException
+     */
     protected function applyConditions($conditions, $val, &$finalDecision)
     {
         foreach ($conditions as $cond) {
@@ -471,6 +475,13 @@ trait Queriable
         return $finalDecision;
     }
 
+    /**
+     * @param $rules
+     * @param $data
+     * @param $orDecision
+     * @return bool|mixed
+     * @throws ConditionNotAllowedException
+     */
     protected function processEachCondition($rules, $data, &$orDecision)
     {
         if (!is_array($rules)) return false;
