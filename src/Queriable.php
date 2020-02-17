@@ -38,7 +38,7 @@ trait Queriable
      *
      * @var array
      */
-    protected $_baseData = [];
+    protected $_original = [];
 
     /**
      * Stores all conditions.
@@ -92,28 +92,6 @@ trait Queriable
         'instance'  => 'instance',
         'any'  => 'any',
     ];
-
-
-    /**
-     * import data from file
-     *
-     * @param string|null $file
-     * @return bool
-     * @throws FileNotFoundException
-     * @throws InvalidJsonException
-     */
-    public function import($file = null)
-    {
-        if (!is_null($file)) {
-            if (is_string($file) && file_exists($file)) {
-                $this->_data = $this->getDataFromFile($file);
-                $this->_baseData = $this->_data;
-                return true;
-            }
-        }
-
-        throw new FileNotFoundException();
-    }
 
     /**
      * Prepare data from desire conditions
@@ -208,29 +186,6 @@ trait Queriable
         if (!is_array($array)) return false;
 
         return array_keys($array) === range(0, count($array) - 1);
-    }
-
-    /**
-     * Check given value is valid JSON
-     *
-     * @param string $value
-     * @param bool $isReturnData
-     *
-     * @return bool|array
-     */
-    public function isJson($value, $isReturnData = false)
-    {
-        if (is_array($value) || is_object($value)) {
-            return false;
-        }
-
-        $data = json_decode($value, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return false;
-        }
-
-        return $isReturnData ? $data : true;
     }
 
     /**
@@ -349,38 +304,6 @@ trait Queriable
         $instance->fresh($meta);
         $value = $instance->takeColumn($value);
         return $instance->collect($value);
-    }
-
-    /**
-     * Read JSON data from file
-     *
-     * @param string $file
-     * @param string $type
-     * @return bool|string|array
-     * @throws FileNotFoundException
-     * @throws InvalidJsonException
-     */
-    protected function getDataFromFile($file, $type = 'application/json')
-    {
-        if (file_exists($file)) {
-            $opts = [
-                'http' => [
-                    'header' => 'Content-Type: '.$type.'; charset=utf-8',
-                ],
-            ];
-
-            $context = stream_context_create($opts);
-            $data = file_get_contents($file, 0, $context);
-            $json = $this->isJson($data, true);
-
-            if (!$json) {
-                throw new InvalidJsonException();
-            }
-
-            return $json;
-        }
-
-        throw new FileNotFoundException();
     }
 
     /**

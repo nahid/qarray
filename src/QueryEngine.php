@@ -395,7 +395,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     public function reset($data = null, $fresh = false)
     {
         if (is_null($data)) {
-            $data = deep_copy($this->_baseData);
+            $data = deep_copy($this->_original);
         }
 
         if ($fresh) {
@@ -885,23 +885,6 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     }
 
     /**
-     * import raw JSON data for process
-     *
-     * @param string $data
-     * @return QueryEngine
-     */
-    public function json($data)
-    {
-        $json = $this->isJson($data, true);
-
-        if ($json) {
-            return $this->collect($json);
-        }
-
-        return $this;
-    }
-
-    /**
      * import parsed data from raw json
      *
      * @param array|object $data
@@ -911,7 +894,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     {
         $data = $this->objectToArray($data);
         $this->_data = deep_copy($data);
-        $this->_baseData = deep_copy($data);
+        $this->_original = deep_copy($data);
         $this->_isProcessed = false;
 
         return $this;
