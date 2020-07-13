@@ -99,7 +99,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      * Implementation of ArrayAccess : Get the target offset
      *
      * @param mixed $key
-     * @return mixed|ValueNotFound
+     * @return mixed|KeyNotExists
      */
     public function offsetGet($key)
     {
@@ -107,7 +107,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
             return $this->_data[$key];
         }
 
-        return new ValueNotFound();
+        return new KeyNotExists();
     }
 
     /**
@@ -149,7 +149,14 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function current()
     {
-        return current($this->_data);
+        $data = current($this->_data);
+        if (!is_array($data)) {
+            return $data;
+        }
+
+        $instance = new static();
+
+        return $instance->collect($data);
     }
 
     /**
@@ -343,6 +350,10 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function fetch($column = [])
     {
+        if (!is_array($column)) {
+            $column = func_get_args();
+        }
+
         return $this->get($column);
     }
 
@@ -892,7 +903,6 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function collect($data)
     {
-        $data = $this->objectToArray($data);
         $this->_data = deep_copy($data);
         $this->_original = deep_copy($data);
         $this->_isProcessed = false;

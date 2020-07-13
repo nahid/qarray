@@ -5,7 +5,8 @@ namespace Nahid\QArray;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\FileNotFoundException;
 use Nahid\QArray\Exceptions\InvalidJsonException;
-use Nahid\QArray\ValueNotFound;
+use Nahid\QArray\Exceptions\KeyNotPresentException;
+use Nahid\QArray\KeyNotExists;
 
 trait Queriable
 {
@@ -80,8 +81,12 @@ trait Queriable
         'lte' => 'lessThanOrEqual',
         'in'    => 'in',
         'notin' => 'notIn',
+        'inarray' => 'inArray',
+        'notinarray' => 'notInArray',
         'null' => 'isNull',
         'notnull' => 'isNotNull',
+        'exists' => 'exists',
+        'notexists' => 'notExists',
         'startswith' => 'startWith',
         'endswith' => 'endWith',
         'match' => 'match',
@@ -111,7 +116,7 @@ trait Queriable
                 $calculatedData = array_slice($calculatedData, $this->_offset, $this->_take);
             }
 
-            $this->_data = $this->objectToArray($calculatedData);
+            $this->_data = $calculatedData;
 
             $this->_conditions = [];
             $this->_node = '';
@@ -124,7 +129,8 @@ trait Queriable
             $this->_data = array_slice($this->_data, $this->_offset, $this->_take);
         }
 
-        $this->_data = $this->objectToArray($this->getData());
+        $this->_data = $this->getData();
+
         return $this;
     }
 
@@ -260,14 +266,8 @@ trait Queriable
     {
         $output = [];
 
-        if (is_null($data) || is_scalar($data)) {
+        if (is_null($data) || is_scalar($data) || !is_array($data)) {
             $this->_data = $data;
-            return $this;
-        }
-
-        if (!is_array($data)) {
-            $this->_data = $data;
-
             return $this;
         }
 
@@ -275,20 +275,17 @@ trait Queriable
             $output[$key] = $this->generateResultData($val);
         }
 
-        $this->_data = $output;
 
-        return $this;
+        return $this->instanceWithValue($output, ['_select' => $this->_select, '_except' => $this->_except]);
     }
 
     protected function generateResultData($data)
     {
-        $output = $data;
-
         if (is_array($data)) {
-            $output = $this->instanceWithValue($data, ['_select' => $this->_select, '_except' => $this->_except]);
+            return $this->takeColumn($data);
         }
 
-        return $output;
+        return $data;
     }
 
     /**
@@ -302,7 +299,7 @@ trait Queriable
     {
         $instance = new static();
         $instance->fresh($meta);
-        $value = $instance->takeColumn($value);
+
         return $instance->collect($value);
     }
 
@@ -332,7 +329,7 @@ trait Queriable
             return $data;
         }
 
-        if (!$node) return new ValueNotFound();
+        if (!$node) return new KeyNotExists();
 
         $terminate = false;
         $path = explode($this->_traveler, $node);
@@ -349,7 +346,7 @@ trait Queriable
         }
 
         if ($terminate) {
-            return new ValueNotFound();
+            return new KeyNotExists();
         }
 
         return $data;
@@ -412,6 +409,7 @@ trait Queriable
         foreach ($rules as $rule) {
             $params = [];
             $function = null;
+
             $value = $this->getFromNested($data, $rule['key']);
 
             if (!is_callable($rule['condition'])) {
@@ -424,15 +422,18 @@ trait Queriable
                 $params = [$value, $data];
             }
 
-            if ($value instanceof ValueNotFound) {
+            if ($value instanceof KeyNotExists) {
                 $andDecision = false;
             }
 
-            if (! $value instanceof ValueNotFound) {
-                $andDecision = call_user_func_array($function, $params);
-            }
+            $andDecision = call_user_func_array($function, $params);
 
-            //$andDecision = $value instanceof ValueNotFound ? false :  call_user_func_array($function, [$value, $rule['value']]);
+           /*
+            if (! $value instanceof KeyNotExists) {
+                $andDecision = call_user_func_array($function, $params);
+            }*/
+
+            //$andDecision = $value instanceof KeyNotExists ? false :  call_user_func_array($function, [$value, $rule['value']]);
             $orDecision &= $andDecision;
         }
 
@@ -559,6 +560,18 @@ trait Queriable
         return $this;
     }
 
+    public function whereInArray($key, $value)
+    {
+        $this->where($key, 'inarray', $value);
+        return $this;
+    }
+
+    public function whereNotInArray($key, $value)
+    {
+        $this->where($key, 'notinarray', $value);
+        return $this;
+    }
+
     /**
      * make WHERE NULL clause
      *
@@ -595,6 +608,20 @@ trait Queriable
     public function whereNotNull($key = null)
     {
         $this->where($key, 'notnull', 'null');
+
+        return $this;
+    }
+
+    public function whereExists($key)
+    {
+        $this->where($key, 'exists', 'null');
+
+        return $this;
+    }
+
+    public function whereNotExists($key)
+    {
+        $this->where($key, 'notExists', 'null');
 
         return $this;
     }
