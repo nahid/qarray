@@ -384,7 +384,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     }
 
     /**
-     * check data exists in system
+     * check exists data from the query
      *
      * @return bool
      * @throws ConditionNotAllowedException
@@ -802,9 +802,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
             $data[$key] = $fn($val);
         }
 
-        $this->_data = $data;
-
-        return $this;
+        return $this->prepareResult($data);
     }
     
     
@@ -824,9 +822,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
             $data[$key] = $fn($val);
         }
         
-        $instance = deep_copy($this);
-
-        return $instance->collect($data);
+        return $this->prepareResult($data);
     }
 
     /**
@@ -836,6 +832,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      * @param string|null $class
      * @return object|array
      * @throws ConditionNotAllowedException
+     * @deprecated 2.0.0
      */
     public function pipe(callable $fn, $class = null)
     {
@@ -888,8 +885,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
      */
     public function then($node)
     {
-        $this->_data = $this->prepare()->first(false);
-
+        $this->prepare();
         $this->from($node);
 
         return $this;
@@ -924,9 +920,8 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
 
         $implode = [];
         if (is_string($key)) {
-            $this->_data = $this->makeImplode($key, $delimiter);
-
-            return $this;
+            $implodedData[$key] = $this->makeImplode($key, $delimiter);
+            return $this->prepareResult($implodedData);
         }
 
         if (is_array($key)) {
@@ -935,13 +930,11 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
                 $implode[$k] = $imp;
             }
 
-            $this->_data = $implode;
-
-            return $this;
+           return $this->prepareResult($implode);
         }
-        $this->_data = '';
 
-        return $this;
+        $implodedData[$key] = '';
+        return $this->prepareResult($implodedData);
     }
 
     /**
@@ -960,7 +953,7 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
             return implode($delimiter, $data);
         }
 
-        return null;
+        return '';
     }
 
     /**
