@@ -108,6 +108,7 @@ class Query
         'month' => 'monthEqual',
         'year' => 'yearEqual',
         'instance'  => 'instance',
+        'type'  => 'type',
         'any'  => 'any',
     ];
 
@@ -762,6 +763,20 @@ class Query
     {
         $this->where($key, 'in', $value);
 
+        return $this;
+    }
+
+    /**
+     * make WHERE DATA TYPE clause
+     *
+     * @param null $key
+     * @param $value
+     * @return $this
+     */
+    public function whereDataType($key = null, $value)
+    {
+        $this->where($key, 'type', $value);
+        
         return $this;
     }
 
