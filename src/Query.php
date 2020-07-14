@@ -773,7 +773,7 @@ class Query
      * @param $value
      * @return $this
      */
-    public function whereDataType($key = null, $value)
+    public function whereDataType($key, $value)
     {
         $this->where($key, 'type', $value);
         
