@@ -1,6 +1,6 @@
 {
     "name": "nahid/qarray",
-    "description": "QArray is a PHP abstraction for quering array",
+    "description": "QArray is a PHP abstraction for querying array",
     "keywords": ["array", "query", "php"],
     "homepage": "https://github.com/nahid/qarray",
     "type": "library",
@@ -17,7 +17,7 @@
     "ext-json": "*"
   },
   "require-dev": {
-        "phpunit/phpunit": "^4.8 || ^5.0",
+        "phpunit/phpunit": "^5.0 || ^6.0",
         "symfony/var-dumper": "^3.4"
   },
   "autoload": {
