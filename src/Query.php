@@ -82,6 +82,7 @@ class Query
         'seq' => 'strictEqual',
         '!=' => 'notEqual',
         'neq' => 'notEqual',
+        '<>' => 'notEqual',
         '!==' => 'strictNotEqual',
         'sneq' => 'strictNotEqual',
         '>' => 'greaterThan',
