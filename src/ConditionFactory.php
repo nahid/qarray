@@ -4,7 +4,7 @@ namespace Nahid\QArray;
 
 use Nahid\QArray\Exceptions\KeyNotPresentException;
 
-class ConditionsFactory
+final class ConditionFactory
 {
     /**
      * Simple equals

@@ -571,11 +571,11 @@ class Query
 
         $function = self::$_conditionsMap[$condition];
         if (!is_callable($function)) {
-            if (!method_exists(ConditionsFactory::class, $function)) {
+            if (!method_exists(ConditionFactory::class, $function)) {
                 throw new ConditionNotAllowedException("Exception: {$condition} condition not allowed");
             }
 
-            $function = [ConditionsFactory::class, $function];
+            $function = [ConditionFactory::class, $function];
         }
 
         return $function;
