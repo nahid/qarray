@@ -381,19 +381,18 @@ class Query
      */
     protected function prepareResult($data)
     {
-        $output = [];
-
         if (is_null($data) || is_scalar($data) || !is_array($data)) {
             $this->_data = $data;
             return $this;
         }
 
+        /*
         foreach ($data as $key => $val) {
             $output[$key] = $this->generateResultData($val);
-        }
+        }*/
 
 
-        return $this->instanceWithValue($output, ['_select' => $this->_select, '_except' => $this->_except]);
+        return $this->instanceWithValue($data, ['_select' => $this->_select, '_except' => $this->_except]);
     }
 
     protected function generateResultData($data)
@@ -484,12 +483,22 @@ class Query
      */
     protected function processQuery()
     {
-        $data = $this->getData();
+        $_data = $this->getData();
         $conditions = $this->_conditions;
 
-        return array_filter($data, function ($data) use ($conditions) {
+        /*return array_filter($data, function ($data) use ($conditions) {
             return $this->applyConditions($conditions, $data);
-        });
+        });*/
+
+        $result = [];
+        foreach ($_data as $key => $data) {
+            $keep = $this->applyConditions($conditions, $data);
+            if ($keep) {
+                $result[$key] = $this->takeColumn($data);
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -536,7 +545,7 @@ class Query
 
             if (is_callable($rule['condition'])) {
                 $function = $rule['condition'];
-                $params = [$value, $data];
+                $params = [$data];
             }
 
             if ($value instanceof KeyNotExists) {
@@ -591,18 +600,21 @@ class Query
      */
     public function where($key, $condition = null, $value = null)
     {
-        if (!is_null($condition) && !is_callable($condition) && is_null($value)) {
+        if (!is_null($condition) && is_null($value)) {
             $value = $condition;
             $condition = '=';
-        }
-
-        if (is_callable($condition) && is_null($value)) {
-            $value = null;
         }
 
         if (count($this->_conditions) < 1) {
             array_push($this->_conditions, []);
         }
+
+        if (is_callable($key)) {
+            $key($this);
+
+            return $this;
+        }
+
         return $this->makeWhere($key, $condition, $value);
     }
 
@@ -623,7 +635,30 @@ class Query
 
         array_push($this->_conditions, []);
 
+        if (is_callable($key)) {
+            $key($this);
+
+            return $this;
+        }
+
         return $this->makeWhere($key, $condition, $value);
+    }
+
+    public function callableWhere(callable $fn)
+    {
+        if (count($this->_conditions) < 1) {
+            array_push($this->_conditions, []);
+        }
+
+        return $this->makeWhere(null, $fn, null);
+    }
+
+    public function orCallableWhere(callable $fn)
+    {
+        array_push($this->_conditions, []);
+        $fn($this);
+        return $this;
+        //return $this->makeWhere(null, $fn, null);
     }
 
     /**
@@ -738,7 +773,7 @@ class Query
 
     public function whereNotExists($key)
     {
-        $this->where($key, 'notExists', 'null');
+        $this->where($key, 'notexists', 'null');
 
         return $this;
     }
@@ -823,12 +858,13 @@ class Query
      */
     public function whereDate($key, $condition, $value = null)
     {
-        return $this->where($key, function($columnValue, $row) use ($value, $condition) {
-            $columnValue = date('Y-m-d', strtotime($columnValue));
+        return $this->callableWhere(function($row) use($key, $condition, $value) {
+            $haystack = $row[$key] ?? null;
+            $haystack = date('Y-m-d', strtotime($haystack));
 
             $function = $this->makeConditionalFunctionFromOperator($condition);
 
-            return call_user_func_array($function, [$columnValue, $value]);
+            return call_user_func_array($function, [$haystack, $value]);
         });
     }
 
@@ -842,12 +878,13 @@ class Query
      */
     public function whereMonth($key, $condition, $value)
     {
-        return $this->where($key, function($columnValue, $row) use ($value, $condition) {
-            $columnValue = date('m', strtotime($columnValue));
+        return $this->callableWhere(function($row) use($key, $condition, $value) {
+            $haystack = $row[$key] ?? null;
+            $haystack = date('m', strtotime($haystack));
 
             $function = $this->makeConditionalFunctionFromOperator($condition);
 
-            return call_user_func_array($function, [$columnValue, $value]);
+            return call_user_func_array($function, [$haystack, $value]);
         });
     }
 
@@ -861,12 +898,13 @@ class Query
      */
     public function whereYear($key, $condition, $value)
     {
-        return $this->where($key, function($columnValue, $row) use ($value, $condition) {
-            $columnValue = date('Y', strtotime($columnValue));
+        return $this->callableWhere(function($row) use($key, $condition, $value) {
+            $haystack = $row[$key] ?? null;
+            $haystack = date('Y', strtotime($haystack));
 
             $function = $this->makeConditionalFunctionFromOperator($condition);
 
-            return call_user_func_array($function, [$columnValue, $value]);
+            return call_user_func_array($function, [$haystack, $value]);
         });
     }
 

@@ -676,7 +676,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
      * transform prepared data by using callable function
      *
      * @param callable $fn
-     * @return object|array
+     * @return self
      * @throws ConditionNotAllowedException
      */
     public function transform(callable $fn)
@@ -846,14 +846,15 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
      * getting specific key's value from prepared data
      *
      * @param string $column
-     * @return object|array
+     * @return self
      * @throws ConditionNotAllowedException
      */
     public function column($column)
     {
         $this->prepare();
 
-        return array_column($this->toArray(), $column);
+        $data = array_column($this->_data, $column);
+        return $this->prepareResult($data);
     }
 
     /**
@@ -903,7 +904,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
     {
         $this->prepare();
 
-        return array_values($this->toArray());
+        return $this->prepareResult(array_values($this->_data));
     }
 
     /**
@@ -932,5 +933,59 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         }
 
         return $chunk_value;
+    }
+
+    public function pluck($column, $key = null)
+    {
+        $this->prepare();
+
+        $pluck_data = [];
+
+        foreach ($this->_data as $data) {
+            $value = $this->getFromNested($data, $column);
+            $name = null;
+            if ($key) {
+                $name = $this->getFromNested($data, $key);
+            }
+
+            if (!$value) continue;
+
+            if ($name) {
+                $pluck_data[$name] = $value;
+            } else {
+                $pluck_data[] = $value;
+            }
+        }
+
+        return $this->prepareResult($pluck_data);
+    }
+
+    public function pop()
+    {
+        $this->prepare();
+
+        $data = array_pop($this->_data);
+        return $this->prepareResult($data);
+    }
+
+    public function shift()
+    {
+        $this->prepare();
+
+        $data = array_shift($this->_data);
+        return $this->prepareResult($data);
+    }
+
+    public function push($data, $key = null)
+    {
+        $this->prepare();
+
+        if (is_null($key)) {
+            $this->_data[] = $data;
+        } else {
+            $this->_data[$key] = $data;
+        }
+
+        return $this;
     }
 }
