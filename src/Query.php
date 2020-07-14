@@ -5,10 +5,11 @@ namespace Nahid\QArray;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\FileNotFoundException;
 use Nahid\QArray\Exceptions\InvalidJsonException;
+use Nahid\QArray\Exceptions\InvalidNodeException;
 use Nahid\QArray\Exceptions\KeyNotPresentException;
 use Nahid\QArray\KeyNotExists;
 
-trait Queriable
+class Query
 {
     /**
      * store node path
@@ -27,6 +28,17 @@ trait Queriable
      * @var array
      */
     protected $_select = [];
+
+    /**
+     * @var int
+     */
+    protected $_offset = 0;
+
+    /**
+     * @var null
+     */
+    protected $_take = null;
+
 
     /**
      * contains column names for except
@@ -62,7 +74,7 @@ trait Queriable
      * map all conditions with methods
      * @var array
      */
-    protected static $_rulesMap = [
+    protected static $_conditionsMap = [
         '=' => 'equal',
         'eq' => 'equal',
         '==' => 'strictEqual',
@@ -102,7 +114,6 @@ trait Queriable
      * Prepare data from desire conditions
      *
      * @return $this
-     * @throws ConditionNotAllowedException
      */
     protected function prepare()
     {
@@ -195,6 +206,26 @@ trait Queriable
     }
 
     /**
+     * Set node path, where QArray start to prepare
+     *
+     * @param null $node
+     * @return $this
+     * @throws InvalidNodeException
+     */
+    public function from($node = null)
+    {
+        $this->_isProcessed = false;
+
+        if (is_null($node) || $node == '') {
+            throw new InvalidNodeException();
+        }
+
+        $this->_node = $node;
+
+        return $this;
+    }
+
+    /**
      * Taking desire columns from result
      *
      * @param $array
@@ -253,6 +284,92 @@ trait Queriable
         }
 
         return array_diff_key($array, array_flip((array) $keys));
+    }
+
+
+    /**
+     * select desired column
+     *
+     * @param array $columns
+     * @return $this
+     */
+    public function select($columns = [])
+    {
+        if (!is_array($columns)) {
+            $columns = func_get_args();
+        }
+
+        $this->setSelect($columns);
+
+        return $this;
+    }
+
+    /**
+     * setter for select columns
+     *
+     * @param array $columns
+     */
+    protected function setSelect($columns = [])
+    {
+        if (count($columns) <= 0 ) {
+            return;
+        }
+
+        foreach ($columns as $key => $column) {
+            if (is_string($column)) {
+                $this->_select[$column] = $key;
+            } elseif(is_callable($column)) {
+                $this->_select[$key] = $column;
+            } else {
+                $this->_select[$column] = $key;
+            }
+        }
+    }
+
+    /**
+     * Set offset value for slice of array
+     *
+     * @param $offset
+     * @return $this
+     */
+    public function offset($offset)
+    {
+        $this->_offset = $offset;
+
+        return $this;
+    }
+
+    /**
+     * Set taken value for slice of array
+     *
+     * @param $take
+     * @return $this
+     */
+    public function take($take)
+    {
+        $this->_take = $take;
+
+        return $this;
+    }
+
+
+    /**
+     * select desired column for except
+     *
+     * @param array $columns
+     * @return $this
+     */
+    public function except($columns = [])
+    {
+        if (!is_array($columns)) {
+            $columns = func_get_args();
+        }
+
+        if (count($columns) > 0 ){
+            $this->_except = $columns;
+        }
+
+        return $this;
     }
 
 
@@ -448,17 +565,17 @@ trait Queriable
      */
     protected function makeConditionalFunctionFromOperator($condition)
     {
-        if (!isset(self::$_rulesMap[$condition])) {
+        if (!isset(self::$_conditionsMap[$condition])) {
             throw new ConditionNotAllowedException("Exception: {$condition} condition not allowed");
         }
 
-        $function = self::$_rulesMap[$condition];
+        $function = self::$_conditionsMap[$condition];
         if (!is_callable($function)) {
-            if (!method_exists(Condition::class, $function)) {
+            if (!method_exists(ConditionsFactory::class, $function)) {
                 throw new ConditionNotAllowedException("Exception: {$condition} condition not allowed");
             }
 
-            $function = [Condition::class, $function];
+            $function = [ConditionsFactory::class, $function];
         }
 
         return $function;
@@ -811,8 +928,8 @@ trait Queriable
      */
     public static function macro($name, callable $fn)
     {
-        if (!array_key_exists($name, self::$_rulesMap)) {
-            self::$_rulesMap[$name] = $fn;
+        if (!array_key_exists($name, self::$_conditionsMap)) {
+            self::$_conditionsMap[$name] = $fn;
             return true;
         }
 

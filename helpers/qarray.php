@@ -34,10 +34,8 @@ if (!function_exists('qarray')) {
             $data = [];
         }
 
-        if (! ArrayQuery::$instance instanceof QueryEngine) {
-            ArrayQuery::$instance = new ArrayQuery();
-        }
+        $instance = ArrayQuery::getInstance();
 
-        return ArrayQuery::$instance->collect($data);
+        return $instance->collect($data);
     }
 }

@@ -7,19 +7,8 @@ use Nahid\QArray\Exceptions\InvalidNodeException;
 use Nahid\QArray\Exceptions\KeyNotPresentException;
 use function DeepCopy\deep_copy;
 
-abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
+abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Countable
 {
-    use Queriable;
-    /**
-     * @var int
-     */
-    protected $_offset = 0;
-
-    /**
-     * @var null
-     */
-    protected $_take = null;
-
     /**
      * this constructor read data from file and parse the data for query
      *
@@ -233,25 +222,6 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
         return $this;
     }
 
-    /**
-     * Set node path, where QArray start to prepare
-     *
-     * @param null $node
-     * @return $this
-     * @throws InvalidNodeException
-     */
-    public function from($node = null)
-    {
-        $this->_isProcessed = false;
-
-        if (is_null($node) || $node == '') {
-            throw new InvalidNodeException();
-        }
-
-        $this->_node = $node;
-
-        return $this;
-    }
 
     /**
      * Alias of from() method
@@ -263,64 +233,6 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
     public function at($node = null)
     {
         return $this->from($node);
-    }
-
-    /**
-     * select desired column
-     *
-     * @param array $columns
-     * @return $this
-     */
-    public function select($columns = [])
-    {
-        if (!is_array($columns)) {
-            $columns = func_get_args();
-        }
-
-        $this->setSelect($columns);
-
-        return $this;
-    }
-
-    /**
-     * setter for select columns
-     *
-     * @param array $columns
-     */
-    protected function setSelect($columns = [])
-    {
-        if (count($columns) <= 0 ) {
-            return;
-        }
-
-        foreach ($columns as $key => $column) {
-            if (is_string($column)) {
-                $this->_select[$column] = $key;
-            } elseif(is_callable($column)) {
-                $this->_select[$key] = $column;
-            } else {
-               $this->_select[$column] = $key;
-            }
-        }
-    }
-
-    /**
-     * select desired column for except
-     *
-     * @param array $columns
-     * @return $this
-     */
-    public function except($columns = [])
-    {
-        if (!is_array($columns)) {
-            $columns = func_get_args();
-        }
-
-        if (count($columns) > 0 ){
-            $this->_except = $columns;
-        }
-
-        return $this;
     }
 
     /**
@@ -355,32 +267,6 @@ abstract class QueryEngine implements \ArrayAccess, \Iterator, \Countable
         }
 
         return $this->get($column);
-    }
-
-    /**
-     * Set offset value for slice of array
-     *
-     * @param $offset
-     * @return $this
-     */
-    public function offset($offset)
-    {
-        $this->_offset = $offset;
-
-        return $this;
-    }
-
-    /**
-     * Set taken value for slice of array
-     *
-     * @param $take
-     * @return $this
-     */
-    public function take($take)
-    {
-        $this->_take = $take;
-
-        return $this;
     }
 
     /**
