@@ -839,7 +839,7 @@ class Query
      * @param string $key
      * @return $this
      */
-    public function whereBool($key = null, $value)
+    public function whereBool($key, $value)
     {
         if (is_bool($value)) {
             $this->where($key, '==', $value);
