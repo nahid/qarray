@@ -61,6 +61,12 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         throw new KeyNotPresentException();
     }
 
+    /**
+     * Property override for current object
+     *
+     * @param $key
+     * @param $val
+     */
     public function __set($key, $val)
     {
         if (is_array($this->_data)) {
@@ -68,6 +74,10 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         }
     }
 
+    /**
+     * @return mixed
+     * @throws ConditionNotAllowedException
+     */
     public function __invoke()
     {
         return $this->toArray();
@@ -193,37 +203,6 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
     }
 
     /**
-     * @param array $props
-     * @return $this
-     */
-    protected function fresh($props = [])
-    {
-        $properties = [
-            '_data'  => [],
-            '_baseData' => [],
-            '_select' => [],
-            '_isProcessed' => false,
-            '_node' => '',
-            '_except' => [],
-            '_conditions' => [],
-            '_take' => null,
-            '_offset' => 0,
-            '_traveler' => '.',
-        ];
-
-        foreach ($properties as $property=>$value) {
-            if (isset($props[$property])) {
-                $value = $props[$property];
-            }
-
-            $this->$property = $value;
-        }
-
-        return $this;
-    }
-
-
-    /**
      * Alias of from() method
      *
      * @param null $node
@@ -250,7 +229,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
 
         $this->setSelect($column);
         $this->prepare();
-        return $this->prepareResult($this->_data);
+        return $this->makeResult($this->_data);
     }
 
     /**
@@ -322,7 +301,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
 
         $data = [];
         foreach ($this->_data as $map) {
-            $value = $this->getFromNested($map, $column);
+            $value = $this->arrayGet($map, $column);
             if ($value) {
                 $data[$value][] = $map;
             }
@@ -346,7 +325,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
 
         $data = [];
         foreach ($this->_data as $map) {
-            $value = $this->getFromNested($map, $column);
+            $value = $this->arrayGet($map, $column);
             if (!$value) {
                 continue;
             }
@@ -376,7 +355,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
 
         $data = [];
         foreach ($this->_data as $map) {
-            $value = $this->getFromNested($map, $column);
+            $value = $this->arrayGet($map, $column);
             if ($value && !array_key_exists($value, $data)) {
                 $data[$value] = $map;
             }
@@ -427,7 +406,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
             $sum = array_sum($data);
         } else {
             foreach ($data as $key => $val) {
-                $value = $this->getFromNested($val, $column);
+                $value = $this->arrayGet($val, $column);
                 if (is_scalar($value)) {
                     $sum += $value;
                 }
@@ -452,7 +431,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         if (!is_null($column)) {
             $values = [];
             foreach ($data as $val) {
-                $values[] = $this->getFromNested($val, $column);
+                $values[] = $this->arrayGet($val, $column);
             }
 
             $data = $values;
@@ -476,7 +455,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         if (!is_null($column)) {
             $values = [];
             foreach ($data as $val) {
-                $values[] = $this->getFromNested($val, $column);
+                $values[] = $this->arrayGet($val, $column);
             }
 
             $data = $values;
@@ -540,7 +519,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         $this->setSelect($column);
 
         if (count($data) > 0) {
-            return $this->prepareResult(end($data));
+            return $this->makeResult(end($data));
         }
 
         return null;
@@ -573,7 +552,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
             $result = $data[$this->count() + $index];
         }
 
-        return $this->prepareResult($result);
+        return $this->makeResult($result);
     }
 
     /**
@@ -593,8 +572,8 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         }
 
         usort($this->_data, function ($a, $b) use ($column, $order) {
-            $val1 = $this->getFromNested($a, $column);
-            $val2 = $this->getFromNested($b, $column);
+            $val1 = $this->arrayGet($a, $column);
+            $val2 = $this->arrayGet($b, $column);
             if (is_string($val1)) {
                 $val1 = strtolower($val1);
             }
@@ -634,7 +613,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
             sort($this->_data);
         }
 
-        return $this->prepareResult($this->_data);
+        return $this->makeResult($this->_data);
 
     }
 
@@ -652,9 +631,14 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         return $this->from($path)->prepare()->get($column);
     }
 
+    /**
+     * Get the raw data of result
+     *
+     * @return mixed
+     */
     public function result()
     {
-        return convert_to_array($this->_data);
+        return $this->_data;
     }
 
     /**
@@ -688,7 +672,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
             $data[$key] = $fn($val);
         }
 
-        return $this->prepareResult($data);
+        return $this->makeResult($data);
     }
     
     
@@ -708,7 +692,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
             $data[$key] = $fn($val);
         }
         
-        return $this->prepareResult($data);
+        return $this->makeResult($data);
     }
 
     /**
@@ -758,7 +742,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
             }
         }
 
-        return $this->prepareResult($data);
+        return $this->makeResult($data);
     }
 
     /**
@@ -778,21 +762,6 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
     }
 
     /**
-     * import parsed data from raw json
-     *
-     * @param array|object $data
-     * @return QueryEngine
-     */
-    public function collect($data)
-    {
-        $this->_data = deep_copy($data);
-        $this->_original = deep_copy($data);
-        $this->_isProcessed = false;
-
-        return $this;
-    }
-
-    /**
      * implode resulting data from desire key and delimeter
      *
      * @param string|array $key
@@ -807,7 +776,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         $implode = [];
         if (is_string($key)) {
             $implodedData[$key] = $this->makeImplode($key, $delimiter);
-            return $this->prepareResult($implodedData);
+            return $this->makeResult($implodedData);
         }
 
         if (is_array($key)) {
@@ -816,11 +785,11 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
                 $implode[$k] = $imp;
             }
 
-           return $this->prepareResult($implode);
+           return $this->makeResult($implode);
         }
 
         $implodedData[$key] = '';
-        return $this->prepareResult($implodedData);
+        return $this->makeResult($implodedData);
     }
 
     /**
@@ -854,7 +823,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         $this->prepare();
 
         $data = array_column($this->_data, $column);
-        return $this->prepareResult($data);
+        return $this->makeResult($data);
     }
 
     /**
@@ -904,7 +873,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
     {
         $this->prepare();
 
-        return $this->prepareResult(array_values($this->_data));
+        return $this->makeResult(array_values($this->_data));
     }
 
     /**
@@ -935,6 +904,13 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         return $chunk_value;
     }
 
+    /**
+     * Pluck the current result set of array
+     *
+     * @param $column
+     * @param null $key
+     * @return array|mixed|QueryEngine
+     */
     public function pluck($column, $key = null)
     {
         $this->prepare();
@@ -942,10 +918,10 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
         $pluck_data = [];
 
         foreach ($this->_data as $data) {
-            $value = $this->getFromNested($data, $column);
+            $value = $this->arrayGet($data, $column);
             $name = null;
             if ($key) {
-                $name = $this->getFromNested($data, $key);
+                $name = $this->arrayGet($data, $key);
             }
 
             if (!$value) continue;
@@ -957,25 +933,42 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
             }
         }
 
-        return $this->prepareResult($pluck_data);
+        return $this->makeResult($pluck_data);
     }
 
+    /**
+     * Array pop from current result set
+     *
+     * @return array|mixed|QueryEngine
+     */
     public function pop()
     {
         $this->prepare();
 
         $data = array_pop($this->_data);
-        return $this->prepareResult($data);
+        return $this->makeResult($data);
     }
 
+    /**
+     * Array shift from current result set
+     *
+     * @return array|mixed|QueryEngine
+     */
     public function shift()
     {
         $this->prepare();
 
         $data = array_shift($this->_data);
-        return $this->prepareResult($data);
+        return $this->makeResult($data);
     }
 
+    /**
+     * Push the given data in current result set
+     *
+     * @param $data
+     * @param null $key
+     * @return $this
+     */
     public function push($data, $key = null)
     {
         $this->prepare();

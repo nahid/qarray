@@ -8,6 +8,7 @@ use Nahid\QArray\Exceptions\InvalidJsonException;
 use Nahid\QArray\Exceptions\InvalidNodeException;
 use Nahid\QArray\Exceptions\KeyNotPresentException;
 use Nahid\QArray\KeyNotExists;
+use function DeepCopy\deep_copy;
 
 class Query
 {
@@ -111,6 +112,53 @@ class Query
     ];
 
     /**
+     * @param array $props
+     * @return $this
+     */
+    protected function fresh($props = [])
+    {
+        $properties = [
+            '_data'  => [],
+            '_baseData' => [],
+            '_select' => [],
+            '_isProcessed' => false,
+            '_node' => '',
+            '_except' => [],
+            '_conditions' => [],
+            '_take' => null,
+            '_offset' => 0,
+            '_traveler' => '.',
+        ];
+
+        foreach ($properties as $property=>$value) {
+            if (isset($props[$property])) {
+                $value = $props[$property];
+            }
+
+            $this->$property = $value;
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * import parsed data from raw json
+     *
+     * @param array|object $data
+     * @return self
+     */
+    public function collect($data)
+    {
+        $this->_data = deep_copy($data);
+        $this->_original = deep_copy($data);
+        $this->_isProcessed = false;
+
+        return $this;
+    }
+
+
+    /**
      * Prepare data from desire conditions
      *
      * @return $this
@@ -198,6 +246,12 @@ class Query
     }
 
 
+    /**
+     * Check the given array is a collection
+     *
+     * @param $array
+     * @return bool
+     */
     protected function isCollection($array)
     {
         if (!is_array($array)) return false;
@@ -377,11 +431,12 @@ class Query
      * Prepare data for result
      *
      * @param mixed $data
+     * @param bool $newInstance
      * @return array|mixed
      */
-    protected function prepareResult($data)
+    protected function makeResult($data, $newInstance = false)
     {
-        if (is_null($data) || is_scalar($data) || !is_array($data)) {
+        if (!$newInstance || is_null($data) || is_scalar($data) || !is_array($data)) {
             $this->_data = $data;
             return $this;
         }
@@ -393,15 +448,6 @@ class Query
 
 
         return $this->instanceWithValue($data, ['_select' => $this->_select, '_except' => $this->_except]);
-    }
-
-    protected function generateResultData($data)
-    {
-        if (is_array($data)) {
-            return $this->takeColumn($data);
-        }
-
-        return $data;
     }
 
     /**
@@ -439,7 +485,7 @@ class Query
      * @param $node string
      * @return bool|array|mixed
      */
-    protected function getFromNested($data, $node)
+    protected function arrayGet($data, $node)
     {
         if (empty($node) || $node == $this->_traveler) {
             return $data;
@@ -475,11 +521,14 @@ class Query
      */
     protected function getData()
     {
-        return $this->getFromNested($this->_data, $this->_node);
+        return $this->arrayGet($this->_data, $this->_node);
     }
 
     /**
+     * Process the given queries
+     *
      * @return array
+     * @throws ConditionNotAllowedException
      */
     protected function processQuery()
     {
@@ -502,6 +551,8 @@ class Query
     }
 
     /**
+     * All the given conditions applied here
+     *
      * @param $conditions
      * @param $data
      * @return bool
@@ -520,6 +571,8 @@ class Query
     }
 
     /**
+     * Apply every conditions for each row
+     *
      * @param $rules
      * @param $data
      * @param $orDecision
@@ -536,7 +589,7 @@ class Query
             $params = [];
             $function = null;
 
-            $value = $this->getFromNested($data, $rule['key']);
+            $value = $this->arrayGet($data, $rule['key']);
 
             if (!is_callable($rule['condition'])) {
                 $function = $this->makeConditionalFunctionFromOperator($rule['condition']);
@@ -568,6 +621,7 @@ class Query
     }
 
     /**
+     * Build or generate a function for applies condition from operator
      * @param $condition
      * @return array
      * @throws ConditionNotAllowedException
@@ -644,6 +698,12 @@ class Query
         return $this->makeWhere($key, $condition, $value);
     }
 
+    /**
+     * make a callable where condition for custom logic implementation
+     *
+     * @param callable $fn
+     * @return $this
+     */
     public function callableWhere(callable $fn)
     {
         if (count($this->_conditions) < 1) {
@@ -653,6 +713,12 @@ class Query
         return $this->makeWhere(null, $fn, null);
     }
 
+    /**
+     * make a callable orwhere condition for custom logic implementation
+     *
+     * @param callable $fn
+     * @return $this\
+     */
     public function orCallableWhere(callable $fn)
     {
         array_push($this->_conditions, []);
@@ -712,12 +778,26 @@ class Query
         return $this;
     }
 
+    /**
+     * check the given value are contains in the given array key
+     *
+     * @param $key
+     * @param $value
+     * @return $this
+     */
     public function whereInArray($key, $value)
     {
         $this->where($key, 'inarray', $value);
         return $this;
     }
 
+    /**
+     * make a callable wherenot condition for custom logic implementation
+     *
+     * @param $key
+     * @param $value
+     * @return $this
+     */
     public function whereNotInArray($key, $value)
     {
         $this->where($key, 'notinarray', $value);
@@ -764,6 +844,12 @@ class Query
         return $this;
     }
 
+    /**
+     * Check the given key is exists in row
+     *
+     * @param $key
+     * @return $this
+     */
     public function whereExists($key)
     {
         $this->where($key, 'exists', 'null');
@@ -771,6 +857,12 @@ class Query
         return $this;
     }
 
+    /**
+     * Check the given key is not exists in row
+     *
+     * @param $key
+     * @return $this
+     */
     public function whereNotExists($key)
     {
         $this->where($key, 'notexists', 'null');
