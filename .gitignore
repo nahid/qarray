@@ -6,3 +6,4 @@ composer.lock
 index.php
 products.json
 src/JsonBuilder.php
+data.json

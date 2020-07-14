@@ -2,7 +2,9 @@
 
 namespace Nahid\QArray;
 
-class Condition
+use Nahid\QArray\Exceptions\KeyNotPresentException;
+
+final class ConditionFactory
 {
     /**
      * Simple equals
@@ -134,6 +136,18 @@ class Condition
         return (is_array($comparable) && !in_array($value, $comparable));
     }
 
+    public static function inArray($value, $comparable)
+    {
+        if (!is_array($value)) return false;
+
+        return in_array($comparable, $value);
+    }
+
+    public static function inNotArray($value, $comparable)
+    {
+        return !static::inArray($value, $comparable);
+    }
+
     /**
      * Is null equal
      *
@@ -155,7 +169,17 @@ class Condition
      */
     public static function isNotNull($value, $comparable)
     {
-        return !is_null($value);
+        return !$value instanceof KeyNotExists && !is_null($value);
+    }
+
+    public static function notExists($value, $comparable)
+    {
+        return $value instanceof KeyNotExists;
+    }
+
+    public static function exists($value, $comparable)
+    {
+        return !static::notExists($value, $comparable);
     }
 
     /**
@@ -301,6 +325,23 @@ class Condition
      * @return bool
      */
     public static function any($value, $comparable)
+    {
+        if (is_array($value)) {
+            return in_array($comparable, $value);
+        }
+
+        return false;
+    }
+
+    /**
+     * is given value exits in given key of array
+     *
+     * @param string $value
+     * @param string $comparable
+     *
+     * @return bool
+     */
+    public static function execFunction($value, $comparable)
     {
         if (is_array($value)) {
             return in_array($comparable, $value);
