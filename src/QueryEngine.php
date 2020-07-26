@@ -7,7 +7,7 @@ use Nahid\QArray\Exceptions\InvalidNodeException;
 use Nahid\QArray\Exceptions\KeyNotPresentException;
 use function DeepCopy\deep_copy;
 
-abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Countable
+abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \Countable
 {
     /**
      * this constructor read data from file and parse the data for query
@@ -800,7 +800,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
      * @return string|null
      * @throws \Exception
      */
-    protected function makeImplode($key, $delimiter)
+    protected function makeImplode($key, $delimiter = ',')
     {
         $data = array_column($this->toArray(), $key);
 
@@ -815,14 +815,15 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
      * getting specific key's value from prepared data
      *
      * @param string $column
+     * @param string|null $index
      * @return self
      * @throws ConditionNotAllowedException
      */
-    public function column($column)
+    public function column($column, $index = null)
     {
         $this->prepare();
 
-        $data = array_column($this->_data, $column);
+        $data = array_column($this->_data, $column, $index);
         return $this->makeResult($data);
     }
 
@@ -905,7 +906,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
     }
 
     /**
-     * Pluck the current result set of array
+     * Pluck is the alias of column
      *
      * @param $column
      * @param null $key
@@ -913,27 +914,7 @@ abstract class QueryEngine extends Query implements \ArrayAccess, \Iterator, \Co
      */
     public function pluck($column, $key = null)
     {
-        $this->prepare();
-
-        $pluck_data = [];
-
-        foreach ($this->_data as $data) {
-            $value = $this->arrayGet($data, $column);
-            $name = null;
-            if ($key) {
-                $name = $this->arrayGet($data, $key);
-            }
-
-            if (!$value) continue;
-
-            if ($name) {
-                $pluck_data[$name] = $value;
-            } else {
-                $pluck_data[] = $value;
-            }
-        }
-
-        return $this->makeResult($pluck_data);
+        return $this->column($column, $key);
     }
 
     /**

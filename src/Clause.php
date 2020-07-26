@@ -3,14 +3,11 @@
 namespace Nahid\QArray;
 
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
-use Nahid\QArray\Exceptions\FileNotFoundException;
-use Nahid\QArray\Exceptions\InvalidJsonException;
 use Nahid\QArray\Exceptions\InvalidNodeException;
 use Nahid\QArray\Exceptions\KeyNotPresentException;
-use Nahid\QArray\KeyNotExists;
 use function DeepCopy\deep_copy;
 
-class Query
+class Clause
 {
     /**
      * store node path
@@ -105,8 +102,6 @@ class Query
         'match' => 'match',
         'contains' => 'contains',
         'dates' => 'dateEqual',
-        'month' => 'monthEqual',
-        'year' => 'yearEqual',
         'instance'  => 'instance',
         'any'  => 'any',
     ];
@@ -481,37 +476,36 @@ class Query
     /**
      * Get data from nested array
      *
-     * @param $data array
-     * @param $node string
-     * @return bool|array|mixed
+     * @param array $data
+     * @param string $node
+     * @param mixed $default
+     * @return mixed
      */
-    protected function arrayGet($data, $node)
+    protected function arrayGet($data, $node, $default = null)
     {
-        if (empty($node) || $node == $this->_traveler) {
-            return $data;
-        }
-
-        if (!$node) return new KeyNotExists();
-
-        $terminate = false;
-        $path = explode($this->_traveler, $node);
-
-        foreach ($path as $val) {
-            if (!is_array($data)) return $data;
-
-            if (!array_key_exists($val, $data)) {
-                $terminate = true;
-                break;
-            }
-
-            $data = &$data[$val];
-        }
-
-        if ($terminate) {
+        if (is_null($node)) {
             return new KeyNotExists();
         }
 
-        return $data;
+        if (isset($data[$node])) {
+            return $data[$node];
+        }
+
+        if (strpos($node, $this->_traveler) === false) {
+            return $default;
+        }
+
+        $items = $data;
+
+        foreach (explode($this->_traveler, $node) as $segment) {
+            if (!is_array($items) || !isset($items[$segment])) {
+                return $default;
+            }
+
+            $items = &$items[$segment];
+        }
+
+        return $items;
     }
 
     /**
@@ -821,9 +815,10 @@ class Query
      * make WHERE Boolean clause
      *
      * @param string $key
+     * @param mixed $value
      * @return $this
      */
-    public function whereBool($key = null, $value)
+    public function whereBool($key, $value)
     {
         if (is_bool($value)) {
             $this->where($key, '==', $value);
@@ -837,7 +832,7 @@ class Query
      * @param string $key
      * @return $this
      */
-    public function whereNotNull($key = null)
+    public function whereNotNull($key)
     {
         $this->where($key, 'notnull', 'null');
 
@@ -951,48 +946,8 @@ class Query
     public function whereDate($key, $condition, $value = null)
     {
         return $this->callableWhere(function($row) use($key, $condition, $value) {
-            $haystack = $row[$key] ?? null;
+            $haystack = isset($row[$key]) ? $row[$key] : null;
             $haystack = date('Y-m-d', strtotime($haystack));
-
-            $function = $this->makeConditionalFunctionFromOperator($condition);
-
-            return call_user_func_array($function, [$haystack, $value]);
-        });
-    }
-
-    /**
-     * make WHERE month clause
-     *
-     * @param string $key
-     * @param mixed $condition
-     * @param string $value
-     * @return $this
-     */
-    public function whereMonth($key, $condition, $value)
-    {
-        return $this->callableWhere(function($row) use($key, $condition, $value) {
-            $haystack = $row[$key] ?? null;
-            $haystack = date('m', strtotime($haystack));
-
-            $function = $this->makeConditionalFunctionFromOperator($condition);
-
-            return call_user_func_array($function, [$haystack, $value]);
-        });
-    }
-
-    /**
-     * make WHERE Year clause
-     *
-     * @param string $key
-     * @param mixed $condition
-     * @param string $value
-     * @return $this
-     */
-    public function whereYear($key, $condition, $value)
-    {
-        return $this->callableWhere(function($row) use($key, $condition, $value) {
-            $haystack = $row[$key] ?? null;
-            $haystack = date('Y', strtotime($haystack));
 
             $function = $this->makeConditionalFunctionFromOperator($condition);
 

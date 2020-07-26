@@ -274,34 +274,6 @@ final class ConditionFactory
         return $date == $comparable;
     }
 
-    /**
-     * Months equal
-     *
-     * @param string $value
-     * @param string $comparable
-     *
-     * @return bool
-     */
-    public static function monthEqual($value, $comparable)
-    {
-        $month = date('m', strtotime($value));
-        return $month == $comparable;
-    }
-
-    /**
-     * Years equal
-     *
-     * @param string $value
-     * @param string $comparable
-     *
-     * @return bool
-     */
-    public static function yearEqual($value, $comparable)
-    {
-        $year = date('Y', strtotime($value));
-        return $year == $comparable;
-    }
-
 
     /**
      * is given value instance of value
