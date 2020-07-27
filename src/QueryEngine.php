@@ -495,6 +495,8 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
         $data = $this->_data;
         $this->setSelect($column);
 
+        if (!is_array($data)) return null;
+
         if (count($data) > 0) {
             $data = $this->toArray();
             $this->_data = reset($data);
@@ -518,6 +520,8 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
         $data = $this->_data;
         $this->setSelect($column);
 
+        if (!is_array($data)) return null;
+
         if (count($data) > 0) {
             return $this->makeResult(end($data));
         }
@@ -539,6 +543,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
 
         $data = $this->_data;
         $this->setSelect($column);
+
+        if (!is_array($data)) return null;
+
         $total_elm = count($data);
         $idx =  abs($index);
 

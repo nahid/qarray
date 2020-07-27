@@ -172,8 +172,6 @@ class Clause
 
             $this->_data = $calculatedData;
 
-            $this->_conditions = [];
-            $this->_node = '';
             $this->_isProcessed = true;
             return $this;
         }
@@ -483,9 +481,11 @@ class Clause
      */
     protected function arrayGet($data, $node, $default = null)
     {
-        if (is_null($node)) {
-            return new KeyNotExists();
+        if (empty($node) || $node == $this->_traveler) {
+            return $data;
         }
+
+        if (!$node) return new KeyNotExists();
 
         if (isset($data[$node])) {
             return $data[$node];
@@ -507,7 +507,6 @@ class Clause
 
         return $items;
     }
-
     /**
      * get data from node path
      *
@@ -534,6 +533,8 @@ class Clause
         });*/
 
         $result = [];
+        if (!is_array($_data)) return null;
+
         foreach ($_data as $key => $data) {
             $keep = $this->applyConditions($conditions, $data);
             if ($keep) {
@@ -741,6 +742,7 @@ class Clause
         ]);
 
         $this->_conditions[$index] = $current;
+        $this->_isProcessed = false;
 
         return $this;
     }
