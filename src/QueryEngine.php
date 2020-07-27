@@ -399,7 +399,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     public function sum($column = null)
     {
         $this->prepare();
-        $data = $this->toArray();
+        $data = $this->_data;
 
         $sum = 0;
         if (is_null($column)) {
@@ -427,7 +427,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     public function max($column = null)
     {
         $this->prepare();
-        $data = $this->toArray();
+        $data = $this->_data;
         if (!is_null($column)) {
             $values = [];
             foreach ($data as $val) {
@@ -450,7 +450,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     public function min($column = null)
     {
         $this->prepare();
-        $data = $this->toArray();
+        $data = $this->_data;
 
         if (!is_null($column)) {
             $values = [];
@@ -696,34 +696,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
         $data = [];
         
         foreach ($this->_data as $key => $val) {
-            $data[$key] = $fn($val);
+            $data[] = $fn($key, $val);
         }
         
         return $this->makeResult($data);
-    }
-
-    /**
-     * pipe send output in next pipe
-     *
-     * @param callable $fn
-     * @param string|null $class
-     * @return object|array
-     * @throws ConditionNotAllowedException
-     * @deprecated 2.0.0
-     */
-    public function pipe(callable $fn, $class = null)
-    {
-        $this->prepare();
-
-        if (is_string($fn) && !is_null($class)) {
-            $instance = new $class;
-
-            $this->_data = call_user_func_array([$instance, $fn], [$this]);
-            return $this;
-        }
-
-        $this->_data = $fn($this);
-        return $this;
     }
 
     /**
