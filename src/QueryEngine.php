@@ -197,8 +197,13 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     public function copy($fresh = false)
     {
         if ($fresh) {
-            $this->fresh();
+            $this->fresh([
+                '_data' => $this->_data,
+                '_original' => $this->_original,
+                '_traveler' => $this->_traveler,
+            ]);
         }
+
         return deep_copy($this);
     }
 
@@ -282,8 +287,6 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
         }
 
         $this->collect($data);
-
-        $this->reProcess();
 
         return $this;
     }
@@ -844,7 +847,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     {
         $this->prepare();
 
-        return array_keys($this->_data);
+        return $this->makeResult(array_keys($this->_data));
     }
 
     /**

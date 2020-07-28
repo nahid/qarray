@@ -110,11 +110,11 @@ class Clause
      * @param array $props
      * @return $this
      */
-    protected function fresh($props = [])
+    public function fresh($props = [])
     {
         $properties = [
             '_data'  => [],
-            '_baseData' => [],
+            '_original' => [],
             '_select' => [],
             '_isProcessed' => false,
             '_node' => '',
@@ -145,9 +145,11 @@ class Clause
      */
     public function collect($data)
     {
+        $this->reProcess();
+        $this->fresh();
+
         $this->_data = deep_copy($data);
         $this->_original = deep_copy($data);
-        $this->_isProcessed = false;
 
         return $this;
     }
@@ -453,9 +455,10 @@ class Clause
     protected function instanceWithValue($value, $meta = [])
     {
         $instance = new static();
+        $instance = $instance->collect($value);
         $instance->fresh($meta);
 
-        return $instance->collect($value);
+        return $instance;
     }
 
     /**
