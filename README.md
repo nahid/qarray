@@ -137,6 +137,7 @@ Shall we?
 * [whereContains](#wherecontainskey-val)
 * [whereMatch](#wherematch-val)
 * [whereInstance](#whereinstance-val)
+* [whereDataType](#wheredatatype-val)
 * [sum](#sumproperty)
 * [count](#count)
 * [size](#size)
@@ -280,6 +281,13 @@ This method will behave like `where(key, 'endswith', val)` method call.
 * `val` -- it should be a String
 
 This method will behave like `where(key, 'contains', val)` method call.
+
+### `whereDataType(key, val)`
+
+* `key` -- the property name of the data
+* `val` -- it should be a String
+
+This method will behave like `whereDataType(key, 'type', val)` method call.
 
 ### `sum(column)`
 

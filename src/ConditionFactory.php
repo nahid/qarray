@@ -289,6 +289,19 @@ final class ConditionFactory
     }
 
     /**
+     * is given value data type of value
+     *
+     * @param string $value
+     * @param string $comparable
+     *
+     * @return bool
+     */
+    public static function type($value, $comparable)
+    {
+        return gettype($value) === $comparable;
+    }
+
+    /**
      * is given value exits in given key of array
      *
      * @param string $value

@@ -79,6 +79,7 @@ class Clause
         'seq' => 'strictEqual',
         '!=' => 'notEqual',
         'neq' => 'notEqual',
+        '<>' => 'notEqual',
         '!==' => 'strictNotEqual',
         'sneq' => 'strictNotEqual',
         '>' => 'greaterThan',
@@ -103,6 +104,7 @@ class Clause
         'contains' => 'contains',
         'dates' => 'dateEqual',
         'instance'  => 'instance',
+        'type'  => 'type',
         'any'  => 'any',
     ];
 
@@ -761,6 +763,20 @@ class Clause
     {
         $this->where($key, 'in', $value);
 
+        return $this;
+    }
+
+    /**
+     * make WHERE DATA TYPE clause
+     *
+     * @param null $key
+     * @param $value
+     * @return $this
+     */
+    public function whereDataType($key, $value)
+    {
+        $this->where($key, 'type', $value);
+        
         return $this;
     }
 
