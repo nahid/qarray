@@ -1,0 +1,29 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        php-versions: [ '5.6', '7.0', '7.1', '7.2', '7.3', '7.4', '8.0', '8.1' ]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout latest revision"
+        uses: actions/checkout@v2
+
+      - name: "Install PHP with extensions"
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+
+      - name: "Install composer"
+        run: curl --show-error --silent https://getcomposer.org/installer | php
+
+      - name: "Install package dependencies"
+        run: php composer.phar install
+
+      - name: "Run PHPUnit tests"
+        run: ./vendor/bin/phpunit --configuration=phpunit.xml
