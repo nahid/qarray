@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nahid\QArray;
 
 use Nahid\QArray\QueryEngine;
