@@ -11,7 +11,7 @@ class ArrayQuery extends QueryEngine
     /**
      * @var null|QueryEngine
      */
-    protected static $instance = null;
+    protected static ?QueryEngine $instance = null;
 
     public function __construct($data = [])
     {
@@ -22,7 +22,7 @@ class ArrayQuery extends QueryEngine
         }
     }
 
-    public static function getInstance()
+    public static function getInstance(): QueryEngine
     {
         if (is_null(static::$instance)) {
             static::$instance = new static();
@@ -31,14 +31,13 @@ class ArrayQuery extends QueryEngine
         return static::$instance;
     }
 
-    public function readPath($file)
+    public function readPath($file): string
     {
         return '{}';
     }
 
     public function parseData($data)
     {
-
         return $this->collect([]);
     }
 }

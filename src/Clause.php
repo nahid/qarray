@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nahid\QArray;
 
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
@@ -13,7 +15,7 @@ class Clause
      * store node path
      * @var string|array
      */
-    protected $_node = '';
+    protected string|array $_node = '';
 
     /**
      * contain prepared data for process
@@ -25,54 +27,54 @@ class Clause
      * contains column names
      * @var array
      */
-    protected $_select = [];
+    protected array $_select = [];
 
     /**
      * @var int
      */
-    protected $_offset = 0;
+    protected int $_offset = 0;
 
     /**
-     * @var null
+     * @var ?int
      */
-    protected $_take = null;
+    protected ?int $_take = null;
 
 
     /**
      * contains column names for except
      * @var array
      */
-    protected $_except = [];
+    protected array $_except = [];
 
     /**
      * Stores base contents.
      *
      * @var array
      */
-    protected $_original = [];
+    protected array $_original = [];
 
     /**
      * Stores all conditions.
      *
      * @var array
      */
-    protected $_conditions = [];
+    protected array $_conditions = [];
 
     /**
      * @var bool
      */
-    protected $_isProcessed = false;
+    protected bool $_isProcessed = false;
 
     /**
      * @var string
      */
-    protected $_traveler = '.';
+    protected string $_traveler = '.';
 
     /**
      * map all conditions with methods
      * @var array
      */
-    protected static $_conditionsMap = [
+    protected static array $_conditionsMap = [
         '=' => 'equal',
         'eq' => 'equal',
         '==' => 'strictEqual',
@@ -112,7 +114,7 @@ class Clause
      * @param array $props
      * @return $this
      */
-    public function fresh($props = [])
+    public function fresh(array $props = []): self
     {
         $properties = [
             '_data'  => [],
@@ -142,10 +144,10 @@ class Clause
     /**
      * import parsed data from raw json
      *
-     * @param array|object $data
+     * @param array $data
      * @return self
      */
-    public function collect($data)
+    public function collect(array $data): self
     {
         $this->reProcess();
         $this->fresh();
@@ -162,7 +164,7 @@ class Clause
      *
      * @return $this
      */
-    protected function prepare()
+    protected function prepare(): self
     {
         if ($this->_isProcessed) {
             return $this;
@@ -196,7 +198,7 @@ class Clause
      *
      * @return $this
      */
-    public function reProcess()
+    public function reProcess(): self
     {
         $this->_isProcessed = false;
         return $this;
@@ -208,19 +210,9 @@ class Clause
      * @param object $obj
      * @return array|mixed
      */
-    protected function objectToArray($obj)
+    protected function objectToArray(object $obj)
     {
-        if (!is_array($obj) && !is_object($obj)) {
-            return $obj;
-        }
-
-        if (is_array($obj)) {
-            return $obj;
-        }
-
-        if (is_object($obj)) {
-            $obj = get_object_vars($obj);
-        }
+        $obj = get_object_vars($obj);
 
         return array_map([$this, 'objectToArray'], $obj);
     }
@@ -231,7 +223,7 @@ class Clause
      * @param array $arr
      * @return bool
      */
-    protected function isMultiArray($arr)
+    protected function isMultiArray(array $arr): bool
     {
         if (!is_array($arr)) {
             return false;
