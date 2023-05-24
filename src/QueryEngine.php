@@ -5,24 +5,11 @@ namespace Nahid\QArray;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\InvalidNodeException;
 use Nahid\QArray\Exceptions\KeyNotPresentException;
+use ReturnTypeWillChange;
 use function DeepCopy\deep_copy;
 
 abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \Countable
 {
-    /**
-     * this constructor read data from file and parse the data for query
-     *
-     * @param string $data
-     */
-    public function __construct($data = null)
-    {
-        if ((is_file($data) && file_exists($data)) || filter_var($data, FILTER_VALIDATE_URL)) {
-            $this->collect($this->readPath($data));
-
-        } else {
-            $this->collect($this->parseData($data));
-        }
-    }
 
     /**
      * return json string when echoing the instance
@@ -39,13 +26,13 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param string $path
      * @return array
      */
-    public abstract function readPath($path);
+    public abstract function readPath(string $path): string;
 
     /**
      * @param string $data
      * @return array
      */
-    public abstract function parseData($data);
+    public abstract function parseData(mixed $data): mixed;
 
     /**
      * @param $key
@@ -86,24 +73,25 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Implementation of ArrayAccess : check existence of the target offset
      *
-     * @param mixed $key
+     * @param mixed $offset
      * @return bool
      */
-    public function offsetExists($key)
+    #[ReturnTypeWillChange]
+    public function offsetExists(mixed $offset): bool
     {
-        return isset($this->_data[$key]);
+        return isset($this->_data[$offset]);
     }
 
     /**
      * Implementation of ArrayAccess : Get the target offset
      *
-     * @param mixed $key
+     * @param mixed $offset
      * @return mixed|KeyNotExists
      */
-    public function offsetGet($key)
+    public function offsetGet(mixed $offset): mixed
     {
-        if ($this->offsetExists($key)) {
-            return $this->_data[$key];
+        if ($this->offsetExists($offset)) {
+            return $this->_data[$offset];
         }
 
         return new KeyNotExists();
@@ -112,41 +100,41 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Implementation of ArrayAccess : Set the target offset
      *
-     * @param mixed $key
+     * @param mixed $offset
      * @param mixed $value
      */
-    public function offsetSet($key, $value)
+    public function offsetSet(mixed $offset, mixed $value): void
     {
-        $this->_data[$key] = $value;
+        $this->_data[$offset] = $value;
     }
 
     /**
      * Implementation of ArrayAccess : Unset the target offset
      *
-     * @param mixed $key
+     * @param mixed $offset
      */
-    public function offsetUnset($key)
+    public function offsetUnset(mixed $offset): void
     {
-        if ($this->offsetExists($key)) {
-           unset($this->_data[$key]);
+        if ($this->offsetExists($offset)) {
+           unset($this->_data[$offset]);
         }
     }
 
     /**
      * Implementation of Iterator : Rewind the Iterator to the first element
      *
-     * @return mixed|void
+     * @return void
      */
-    public function rewind()
+    public function rewind(): void
     {
-        return reset($this->_data);
+         reset($this->_data);
     }
 
     /**
      * Implementation of Iterator : Return the current element
      * @return mixed
      */
-    public function current()
+    public function current(): mixed
     {
         $data = current($this->_data);
         if (!is_array($data)) {
@@ -161,9 +149,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Implementation of Iterator : Return the key of the current element
      *
-     * @return int|mixed|null|string
+     * @return mixed
      */
-    public function key()
+    public function key(): mixed
     {
         return key($this->_data);
     }
@@ -171,11 +159,11 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Implementation of Iterator : Move forward to next element
      *
-     * @return mixed|void
+     * @return void
      */
-    public function next()
+    public function next(): void
     {
-        return next($this->_data);
+        next($this->_data);
     }
 
     /**
@@ -183,7 +171,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @return bool
      */
-    public function valid()
+    public function valid(): bool
     {
         return key($this->_data) !== null;
     }
@@ -194,7 +182,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param bool $fresh
      * @return QueryEngine
      */
-    public function copy($fresh = false)
+    public function copy(bool $fresh = false): self
     {
         if ($fresh) {
             $this->fresh([
@@ -375,7 +363,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @return int
      * @throws ConditionNotAllowedException
      */
-    public function count()
+    public function count(): int
     {
         $this->prepare();
 

@@ -108,6 +108,7 @@ class Clause
         'instance'  => 'instance',
         'type'  => 'type',
         'any'  => 'any',
+        'bool' => 'isBool',
     ];
 
     /**
@@ -225,10 +226,6 @@ class Clause
      */
     protected function isMultiArray(array $arr): bool
     {
-        if (!is_array($arr)) {
-            return false;
-        }
-
         rsort($arr);
 
         return isset($arr[0]) && is_array($arr[0]);
@@ -238,29 +235,26 @@ class Clause
     /**
      * Check the given array is a collection
      *
-     * @param $array
+     * @param array $data
      * @return bool
      */
-    protected function isCollection($array)
+    protected function isCollection(array $data): bool
     {
-        if (!is_array($array)) return false;
-
-        return array_keys($array) === range(0, count($array) - 1);
+        return array_is_list($data);
     }
 
     /**
      * Set node path, where QArray start to prepare
      *
-     * @param null $node
-     * @return $this
-     * @throws InvalidNodeException
+     * @param string $node
+     * @return self
      */
-    public function from($node = null)
+    public function from(string $node = '.'): self
     {
         $this->_isProcessed = false;
 
-        if (is_null($node) || $node == '') {
-            throw new InvalidNodeException();
+        if ($node == '') {
+            $node = '.';
         }
 
         $this->_node = $node;
@@ -271,41 +265,41 @@ class Clause
     /**
      * Taking desire columns from result
      *
-     * @param $array
+     * @param array $columns
      * @return array
      */
-    public function takeColumn($array)
+    public function takeColumn(string ...$columns): array
     {
-        return $this->selectColumn($this->exceptColumn($array));
+        return $this->selectColumn($this->exceptColumn($columns));
     }
 
     /**
      * selecting specific column
      *
-     * @param $array
+     * @param array $columns
      * @return array
      */
-    protected function selectColumn($array)
+    protected function selectColumn(array $columns): array
     {
         $keys = $this->_select;
         if (count($keys) == 0) {
-            return $array;
+            return $columns;
         }
 
         $select = array_keys($keys);
-        $columns = array_intersect_key($array, array_flip((array) $select));
+        $properties = array_intersect_key($columns, array_flip((array) $select));
         $row = [];
-        foreach ($columns as $column => $val) {
+        foreach ($properties as $column => $property) {
             $fn = null;
             if (array_key_exists($column, $keys)) {
                 $fn = $keys[$column];
             }
 
             if (is_callable($fn)) {
-                $val = call_user_func_array($fn, [$val, $array]);
+                $property = call_user_func_array($fn, [$property, $columns]);
             }
 
-            $row[$column] = $val;
+            $row[$column] = $property;
         }
 
         return $row;
@@ -315,18 +309,18 @@ class Clause
     /**
      * selecting specific column
      *
-     * @param $array
+     * @param array $columns
      * @return array
      */
-    protected function exceptColumn($array)
+    protected function exceptColumn( array $columns): array
     {
         $keys = $this->_except;
 
         if (count($keys) == 0) {
-            return $array;
+            return $columns;
         }
 
-        return array_diff_key($array, array_flip((array) $keys));
+        return array_diff_key($columns, array_flip($keys));
     }
 
 
@@ -336,12 +330,8 @@ class Clause
      * @param array $columns
      * @return $this
      */
-    public function select($columns = [])
+    public function select(string ...$columns ): self
     {
-        if (!is_array($columns)) {
-            $columns = func_get_args();
-        }
-
         $this->setSelect($columns);
 
         return $this;
@@ -352,7 +342,7 @@ class Clause
      *
      * @param array $columns
      */
-    protected function setSelect($columns = [])
+    protected function setSelect(array $columns = []): void
     {
         if (count($columns) <= 0 ) {
             return;
@@ -372,10 +362,10 @@ class Clause
     /**
      * Set offset value for slice of array
      *
-     * @param $offset
+     * @param int $offset
      * @return $this
      */
-    public function offset($offset)
+    public function offset(int $offset): self
     {
         $this->_offset = $offset;
 
@@ -385,10 +375,10 @@ class Clause
     /**
      * Set taken value for slice of array
      *
-     * @param $take
+     * @param int $take
      * @return $this
      */
-    public function take($take)
+    public function take(int $take): self
     {
         $this->_take = $take;
 
@@ -402,12 +392,8 @@ class Clause
      * @param array $columns
      * @return $this
      */
-    public function except($columns = [])
+    public function except(string ...$columns): self
     {
-        if (!is_array($columns)) {
-            $columns = func_get_args();
-        }
-
         if (count($columns) > 0 ){
             $this->_except = $columns;
         }
@@ -421,9 +407,9 @@ class Clause
      *
      * @param mixed $data
      * @param bool $newInstance
-     * @return array|mixed
+     * @return self
      */
-    protected function makeResult($data, $newInstance = false)
+    protected function makeResult(mixed $data, bool $newInstance = false): self
     {
         if (!$newInstance || is_null($data) || is_scalar($data) || !is_array($data)) {
             $this->_data = $data;
@@ -442,11 +428,11 @@ class Clause
     /**
      * Create/Copy new instance with given value
      *
-     * @param       $value
+     * @param array $value
      * @param array $meta
-     * @return mixed
+     * @return self
      */
-    protected function instanceWithValue($value, $meta = [])
+    protected function instanceWithValue(array $value, array $meta = []): self
     {
         $instance = new static();
         $instance = $instance->collect($value);
@@ -458,10 +444,10 @@ class Clause
     /**
      * Set traveler delimiter
      *
-     * @param $delimiter
-     * @return $this
+     * @param string $delimiter
+     * @return self
      */
-    public function setTraveler($delimiter)
+    public function setTraveler(string $delimiter): self
     {
         $this->_traveler = $delimiter;
 
@@ -476,26 +462,24 @@ class Clause
      * @param mixed $default
      * @return mixed
      */
-    protected function arrayGet($data, $node, $default = null)
+    protected function arrayGet(array $data, string $node, mixed $default = null): mixed
     {
-        if (empty($node) || $node == $this->_traveler) {
+        if ($node === '' || $node === $this->_traveler) {
             return $data;
         }
-
-        if (!$node) return new KeyNotExists();
 
         if (isset($data[$node])) {
             return $data[$node];
         }
 
-        if (strpos($node, $this->_traveler) === false) {
+        if (!str_contains($node, $this->_traveler)) {
             return $default;
         }
 
         $items = $data;
 
         foreach (explode($this->_traveler, $node) as $segment) {
-            if (!is_array($items) || !isset($items[$segment])) {
+            if (!isset($items[$segment])) {
                 return $default;
             }
 
@@ -509,7 +493,7 @@ class Clause
      *
      * @return mixed
      */
-    protected function getData()
+    protected function getData(): mixed
     {
         return $this->arrayGet($this->_data, $this->_node);
     }
@@ -520,7 +504,7 @@ class Clause
      * @return array
      * @throws ConditionNotAllowedException
      */
-    protected function processQuery()
+    protected function processQuery(): array
     {
         $_data = $this->getData();
         $conditions = $this->_conditions;
@@ -545,12 +529,12 @@ class Clause
     /**
      * All the given conditions applied here
      *
-     * @param $conditions
-     * @param $data
+     * @param array $conditions
+     * @param array $data
      * @return bool
      * @throws ConditionNotAllowedException
      */
-    protected function applyConditions($conditions, $data)
+    protected function applyConditions(array $conditions, array $data): bool
     {
         $decision = false;
         foreach ($conditions as $cond) {
@@ -565,16 +549,14 @@ class Clause
     /**
      * Apply every conditions for each row
      *
-     * @param $rules
-     * @param $data
-     * @param $orDecision
-     * @return bool|mixed
+     * @param array $rules
+     * @param array $data
+     * @param bool $orDecision
+     * @return bool
      * @throws ConditionNotAllowedException
      */
-    protected function processEachCondition($rules, $data, &$orDecision)
+    protected function processEachCondition(array $rules, array $data, bool &$orDecision): bool
     {
-        if (!is_array($rules)) return false;
-
         $andDecision = true;
 
         foreach ($rules as $rule) {
@@ -614,11 +596,11 @@ class Clause
 
     /**
      * Build or generate a function for applies condition from operator
-     * @param $condition
+     * @param string $condition
      * @return array
      * @throws ConditionNotAllowedException
      */
-    protected function makeConditionalFunctionFromOperator($condition)
+    protected function makeConditionalFunctionFromOperator(string $condition): array
     {
         if (!isset(self::$_conditionsMap[$condition])) {
             throw new ConditionNotAllowedException("Exception: {$condition} condition not allowed");
@@ -639,12 +621,12 @@ class Clause
     /**
      * make WHERE clause
      *
-     * @param string $key
+     * @param string|callable $key
      * @param string $condition
      * @param mixed $value
      * @return $this
      */
-    public function where($key, $condition = null, $value = null)
+    public function where(string|callable $key, mixed $condition = null, mixed $value = null): self
     {
         if (!is_null($condition) && is_null($value)) {
             $value = $condition;
@@ -652,7 +634,7 @@ class Clause
         }
 
         if (count($this->_conditions) < 1) {
-            array_push($this->_conditions, []);
+            $this->_conditions[] = [];
         }
 
         if (is_callable($key)) {
@@ -667,19 +649,19 @@ class Clause
     /**
      * make WHERE clause with OR
      *
-     * @param string $key
+     * @param string|callable $key
      * @param string $condition
      * @param mixed $value
      * @return $this
      */
-    public function orWhere($key = null, $condition = null, $value = null)
+    public function orWhere(string|callable $key, mixed $condition = null, mixed $value = null): self
     {
         if (!is_null($condition) && is_null($value)) {
             $value = $condition;
             $condition = '=';
         }
 
-        array_push($this->_conditions, []);
+        $this->_conditions[] = [];
 
         if (is_callable($key)) {
             $key($this);
@@ -696,10 +678,10 @@ class Clause
      * @param callable $fn
      * @return $this
      */
-    public function callableWhere(callable $fn)
+    public function callableWhere(callable $fn): self
     {
         if (count($this->_conditions) < 1) {
-            array_push($this->_conditions, []);
+            $this->_conditions[] = [];
         }
 
         return $this->makeWhere(null, $fn, null);
@@ -709,12 +691,14 @@ class Clause
      * make a callable orwhere condition for custom logic implementation
      *
      * @param callable $fn
-     * @return $this\
+     * @return $this
      */
-    public function orCallableWhere(callable $fn)
+    public function orCallableWhere(callable $fn): self
+
     {
-        array_push($this->_conditions, []);
+        $this->_conditions[] = [];
         $fn($this);
+
         return $this;
         //return $this->makeWhere(null, $fn, null);
     }
@@ -722,21 +706,21 @@ class Clause
     /**
      * generator for AND and OR where
      *
-     * @param string $key
+     * @param string|callable $key
      * @param string $condition
      * @param mixed $value
      * @return $this
      */
-    protected function makeWhere($key, $condition = null, $value = null)
+    protected function makeWhere(string|callable $key, mixed $condition = null, mixed $value = null): self
     {
         $current = end($this->_conditions);
         $index = key($this->_conditions);
 
-        array_push($current, [
+        $current[] = [
             'key' => $key,
             'condition' => $condition,
             'value' => $value
-        ]);
+        ];
 
         $this->_conditions[$index] = $current;
         $this->_isProcessed = false;
@@ -751,7 +735,7 @@ class Clause
      * @param array $value
      * @return $this
      */
-    public function whereIn($key = null, $value = [])
+    public function whereIn(string $key, array $value = []): self
     {
         $this->where($key, 'in', $value);
 
@@ -761,11 +745,11 @@ class Clause
     /**
      * make WHERE DATA TYPE clause
      *
-     * @param null $key
-     * @param $value
+     * @param string $key
+     * @param mixed $value
      * @return $this
      */
-    public function whereDataType($key, $value)
+    public function whereDataType(string $key, mixed $value): self
     {
         $this->where($key, 'type', $value);
         
@@ -779,35 +763,38 @@ class Clause
      * @param mixed $value
      * @return $this
      */
-    public function whereNotIn($key = null, $value = [])
+    public function whereNotIn(string $key, array $value = []): self
     {
         $this->where($key, 'notin', $value);
+
         return $this;
     }
 
     /**
      * check the given value are contains in the given array key
      *
-     * @param $key
-     * @param $value
+     * @param string $key
+     * @param mixed $value
      * @return $this
      */
-    public function whereInArray($key, $value)
+    public function whereInArray(string $key, mixed $value): self
     {
         $this->where($key, 'inarray', $value);
+
         return $this;
     }
 
     /**
      * make a callable wherenot condition for custom logic implementation
      *
-     * @param $key
-     * @param $value
+     * @param string $key
+     * @param mixed $value
      * @return $this
      */
-    public function whereNotInArray($key, $value)
+    public function whereNotInArray(string $key, mixed $value): self
     {
         $this->where($key, 'notinarray', $value);
+
         return $this;
     }
 
@@ -817,9 +804,10 @@ class Clause
      * @param string $key
      * @return $this
      */
-    public function whereNull($key = null)
+    public function whereNull(string $key): self
     {
         $this->where($key, 'null', 'null');
+
         return $this;
     }
 
@@ -828,14 +816,12 @@ class Clause
      * make WHERE Boolean clause
      *
      * @param string $key
-     * @param mixed $value
      * @return $this
      */
-    public function whereBool($key, $value)
+    public function whereBool(string $key): self
     {
-        if (is_bool($value)) {
-            $this->where($key, '==', $value);
-        }
+        $this->where($key, 'bool');
+
         return $this;
     }
 

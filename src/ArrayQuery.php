@@ -13,13 +13,9 @@ class ArrayQuery extends QueryEngine
      */
     protected static ?QueryEngine $instance = null;
 
-    public function __construct($data = [])
+    public function __construct(array $data = [])
     {
-        if (is_array($data)) {
-            $this->collect($data);
-        } else {
-            parent::__construct($data);
-        }
+        $this->collect($data);
     }
 
     public static function getInstance(): QueryEngine
@@ -31,12 +27,12 @@ class ArrayQuery extends QueryEngine
         return static::$instance;
     }
 
-    public function readPath($file): string
+    public function readPath(string $path): string
     {
         return '{}';
     }
 
-    public function parseData($data)
+    public function parseData(mixed $data): mixed
     {
         return $this->collect([]);
     }

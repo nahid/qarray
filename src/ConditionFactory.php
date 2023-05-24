@@ -182,6 +182,11 @@ final class ConditionFactory
         return !static::notExists($value, $comparable);
     }
 
+    public static function isBool($value, $comparable)
+    {
+        return is_bool($comparable);
+    }
+
     /**
      * Start With
      *
