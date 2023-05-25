@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Nahid\QArray;
 
-use Nahid\QArray\QueryEngine;
-
 class ArrayQuery extends QueryEngine
 {
     /**
@@ -27,13 +25,13 @@ class ArrayQuery extends QueryEngine
         return static::$instance;
     }
 
-    public function readPath(string $path): string
+    public function readPath(string $path): array
     {
-        return '{}';
+        return [];
     }
 
-    public function parseData(mixed $data): mixed
+    public function parseData(mixed $data): array
     {
-        return $this->collect([]);
+        return [];
     }
 }

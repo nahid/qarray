@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nahid\QArray;
 
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
-use Nahid\QArray\Exceptions\InvalidNodeException;
 use Nahid\QArray\Exceptions\KeyNotPresentException;
-use ReturnTypeWillChange;
 use function DeepCopy\deep_copy;
 
 abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \Countable
@@ -17,7 +17,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @return string
      * @throws ConditionNotAllowedException
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->toJson();
     }
@@ -26,20 +26,20 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param string $path
      * @return array
      */
-    public abstract function readPath(string $path): string;
+    public abstract function readPath(string $path): array;
 
     /**
-     * @param string $data
+     * @param string|array $data
      * @return array
      */
-    public abstract function parseData(mixed $data): mixed;
+    public abstract function parseData(string|array $data): array;
 
     /**
-     * @param $key
+     * @param string $key
      * @return mixed
      * @throws KeyNotPresentException
      */
-    public function __get($key)
+    public function __get(string $key): mixed
     {
         if (isset($this->_data[$key]) or is_null($this->_data[$key])) {
             return $this->_data[$key];
@@ -51,21 +51,18 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Property override for current object
      *
-     * @param $key
-     * @param $val
+     * @param string $key
+     * @param mixed $val
      */
-    public function __set($key, $val)
+    public function __set(string $key, mixed $val): void
     {
-        if (is_array($this->_data)) {
-            $this->_data[$key] = $val;
-        }
+        $this->_data[$key] = $val;
     }
 
     /**
-     * @return mixed
-     * @throws ConditionNotAllowedException
+     * @return array
      */
-    public function __invoke()
+    public function __invoke(): array
     {
         return $this->toArray();
     }
@@ -76,7 +73,6 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param mixed $offset
      * @return bool
      */
-    #[ReturnTypeWillChange]
     public function offsetExists(mixed $offset): bool
     {
         return isset($this->_data[$offset]);
@@ -198,11 +194,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Alias of from() method
      *
-     * @param null $node
+     * @param string $node
      * @return $this
-     * @throws InvalidNodeException
      */
-    public function at($node = null)
+    public function at(string $node = '.'): self
     {
         return $this->from($node);
     }
@@ -210,48 +205,51 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * getting prepared data
      *
-     * @param array $column
+     * @param string ...$columns
      * @return QueryEngine
-     * @throws ConditionNotAllowedException
      */
-    public function get($column = [])
+    public function get(string ...$columns): self
     {
-        if (!is_array($column)) {
-            $column = func_get_args();
-        }
 
-        $this->setSelect($column);
+        $this->setSelect($columns);
         $this->prepare();
         return $this->makeResult($this->_data);
     }
 
     /**
+     * getting prepared data
+     *
+     * @param string ...$columns
+     * @return mixed
+     */
+    public function receive(string ...$columns): mixed
+    {
+        $this->setSelect($columns);
+
+        return $this->prepareForReceive();
+    }
+
+    /**
      * alias of get method
      *
-     * @param array $column
-     * @return array|object
-     * @throws ConditionNotAllowedException
+     * @param string ...$columns
+     * @return QueryEngine
      */
-    public function fetch($column = [])
+    public function fetch(string ...$columns): self
     {
-        if (!is_array($column)) {
-            $column = func_get_args();
-        }
-
-        return $this->get($column);
+        return $this->get(...$columns);
     }
 
     /**
      * check exists data from the query
      *
      * @return bool
-     * @throws ConditionNotAllowedException
      */
-    public function exists()
+    public function exists(): bool
     {
         $this->prepare();
 
-        return (!empty($this->_data) && !is_null($this->_data));
+        return (!empty($this->_data));
     }
 
     /**
@@ -261,9 +259,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param bool $fresh
      * @return QueryEngine
      */
-    public function reset($data = null, $fresh = false)
+    public function reset(array $data = [], bool $fresh = false): self
     {
-        if (is_null($data)) {
+        if ($data === []) {
             $data = deep_copy($this->_original);
         }
 
@@ -284,9 +282,8 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @param string $column
      * @return $this
-     * @throws ConditionNotAllowedException
      */
-    public function groupBy($column)
+    public function groupBy(string $column): self
     {
         $this->prepare();
 
@@ -305,11 +302,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Group by count from array value
      *
-     * @param $column
+     * @param string $column
      * @return $this
-     * @throws ConditionNotAllowedException
      */
-    public function countGroupBy($column)
+    public function countGroupBy(string $column): self
     {
 
         $this->prepare();
@@ -329,6 +325,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
         }
 
         $this->_data = $data;
+
         return $this;
     }
 
@@ -338,9 +335,8 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @param string $column
      * @return $this
-     * @throws ConditionNotAllowedException
      */
-    public function distinct($column)
+    public function distinct(string $column): self
     {
         $this->prepare();
 
@@ -353,6 +349,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
         }
 
         $this->_data = array_values($data);
+
         return $this;
     }
 
@@ -361,7 +358,6 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * count prepared data
      *
      * @return int
-     * @throws ConditionNotAllowedException
      */
     public function count(): int
     {
@@ -374,20 +370,18 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * size is an alias of count
      *
      * @return int
-     * @throws ConditionNotAllowedException
      */
-    public function size()
+    public function size(): int
     {
         return $this->count();
     }
 
     /**
      * sum prepared data
-     * @param int $column
-     * @return number
-     * @throws ConditionNotAllowedException
+     * @param string|null $column
+     * @return int|float
      */
-    public function sum($column = null)
+    public function sum(?string $column = null): int|float
     {
         $this->prepare();
         $data = $this->_data;
@@ -411,11 +405,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * getting max value from prepared data
      *
-     * @param int $column
-     * @return number
-     * @throws ConditionNotAllowedException
+     * @param string|null $column
+     * @return int|float
      */
-    public function max($column = null)
+    public function max(?string $column = null): int|float
     {
         $this->prepare();
         $data = $this->_data;
@@ -434,11 +427,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * getting min value from prepared data
      *
-     * @param int $column
-     * @return number
-     * @throws ConditionNotAllowedException
+     * @param string|null $column
+     * @return int|float
      */
-    public function min($column = null)
+    public function min(?string $column = null): int|float
     {
         $this->prepare();
         $data = $this->_data;
@@ -458,11 +450,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * getting average value from prepared data
      *
-     * @param int $column
-     * @return number
-     * @throws ConditionNotAllowedException
+     * @param string|null $column
+     * @return int|float
      */
-    public function avg($column = null)
+    public function avg(?string $column = null): int|float
     {
         $this->prepare();
 
@@ -475,18 +466,15 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * getting first element of prepared data
      *
-     * @param array $column
-     * @return object|array|null
-     * @throws ConditionNotAllowedException
+     * @param array $columns
+     * @return QueryEngine|null
      */
-    public function first($column = [])
+    public function first(string ...$columns): ?self
     {
         $this->prepare();
 
         $data = $this->_data;
-        $this->setSelect($column);
-
-        if (!is_array($data)) return null;
+        $this->setSelect($columns);
 
         if (count($data) > 0) {
             $data = $this->toArray();
@@ -500,18 +488,15 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * getting last element of prepared data
      *
-     * @param array $column
-     * @return object|array|null
-     * @throws ConditionNotAllowedException
+     * @param array $columns
+     * @return QueryEngine|null
      */
-    public function last($column = [])
+    public function last(string ...$columns): ?self
     {
         $this->prepare();
 
         $data = $this->_data;
-        $this->setSelect($column);
-
-        if (!is_array($data)) return null;
+        $this->setSelect($columns);
 
         if (count($data) > 0) {
             return $this->makeResult(end($data));
@@ -524,23 +509,20 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * getting nth number of element of prepared data
      *
      * @param int $index
-     * @param array $column
-     * @return object|array|null
-     * @throws ConditionNotAllowedException
+     * @param array $columns
+     * @return QueryEngine|null
      */
-    public function nth($index, $column = [])
+    public function nth(int $index, string ...$columns): ?self
     {
         $this->prepare();
 
         $data = $this->_data;
-        $this->setSelect($column);
-
-        if (!is_array($data)) return null;
+        $this->setSelect($columns);
 
         $total_elm = count($data);
         $idx =  abs($index);
 
-        if (!is_integer($index) || $total_elm < $idx || $index == 0 || !is_array($this->_data)) {
+        if ($total_elm < $idx || $index == 0) {
             return null;
         }
 
@@ -558,16 +540,11 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @param string $column
      * @param string $order
-     * @return object|array|null
-     * @throws ConditionNotAllowedException
+     * @return QueryEngine
      */
-    public function sortBy($column, $order = 'asc')
+    public function sortBy(string $column, string $order = 'asc'): self
     {
         $this->prepare();
-
-        if (!is_array($this->_data)) {
-            return $this;
-        }
 
         usort($this->_data, function ($a, $b) use ($column, $order) {
             $val1 = $this->arrayGet($a, $column);
@@ -601,7 +578,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param string $order
      * @return QueryEngine
      */
-    public function sort($order = 'asc')
+    public function sort(string $order = 'asc'): self
     {
         $this->_data = convert_to_array($this->_data);
 
@@ -619,14 +596,45 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * getting data from desire path
      *
      * @param string $path
-     * @param array $column
      * @return mixed
-     * @throws InvalidNodeException
-     * @throws ConditionNotAllowedException
      */
-    public function find($path, $column = [])
+    public function grab(string $path): mixed
     {
-        return $this->from($path)->prepare()->get($column);
+        $this->_conditions = [];
+
+        return $this->from($path)->receive();
+    }
+
+    /**
+     * @param int $index
+     * @param string|null $column
+     * @return $this|self|null
+     */
+    public function find(int $index, ?string $column = null): ?self
+    {
+        $this->prepare();
+
+        $data = array_values($this->_data);
+
+        if (array_is_list($data) && is_null($column) && isset($data[$index])) {
+            $this->_data = $data[$index];
+
+            return $this;
+        }
+
+        if (!$this->isCollection($data)) {
+            return null;
+        }
+
+        foreach ($data as $key => $val) {
+            if ($this->arrayGet($val, $column) == $index) {
+                $this->_data = $val;
+
+                return $this;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -634,7 +642,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @return mixed
      */
-    public function result()
+    public function result(): mixed
     {
         return $this->_data;
     }
@@ -645,7 +653,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param callable $fn
      * @throws ConditionNotAllowedException
      */
-    public function each(callable $fn)
+    public function each(callable $fn): void
     {
         $this->prepare();
 
@@ -661,7 +669,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @return self
      * @throws ConditionNotAllowedException
      */
-    public function transform(callable $fn)
+    public function transform(callable $fn): self
     {
         $this->prepare();
         $data = [];
@@ -672,16 +680,15 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
 
         return $this->makeResult($data);
     }
-    
-    
-     /**
+
+
+    /**
      * map prepared data by using callable function for each entity
      *
      * @param callable $fn
-     * @return object|array
-     * @throws ConditionNotAllowedException
+     * @return QueryEngine
      */
-    public function map(callable $fn)
+    public function map(callable $fn): self
     {
         $this->prepare();
         $data = [];
@@ -698,10 +705,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @param callable $fn
      * @param bool $key
-     * @return mixed|array
-     * @throws ConditionNotAllowedException
+     * @return QueryEngine
      */
-    public function filter(callable $fn, $key = false)
+    public function filter(callable $fn, bool $key = false): self
     {
         $this->prepare();
 
@@ -724,10 +730,8 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @param string $node
      * @return QueryEngine
-     * @throws InvalidNodeException
-     * @throws ConditionNotAllowedException
      */
-    public function then($node)
+    public function then(string $node = '.'): self
     {
         $this->prepare();
         $this->from($node);
@@ -741,9 +745,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param string|array $key
      * @param string $delimiter
      * @return self
-     * @throws ConditionNotAllowedException
+     * @throws ConditionNotAllowedException|\Exception
      */
-    public function implode($key, $delimiter = ',')
+    public function implode(string|array $key, string $delimiter = ','): self
     {
         $this->prepare();
 
@@ -771,18 +775,13 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @param string $key
      * @param string $delimiter
-     * @return string|null
-     * @throws \Exception
+     * @return string
      */
-    protected function makeImplode($key, $delimiter = ',')
+    protected function makeImplode(string $key, string $delimiter = ','): string
     {
         $data = array_column($this->toArray(), $key);
 
-        if (is_array($data)) {
-            return implode($delimiter, $data);
-        }
-
-        return '';
+        return implode($delimiter, $data);
     }
 
     /**
@@ -791,9 +790,8 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param string $column
      * @param string|null $index
      * @return self
-     * @throws ConditionNotAllowedException
      */
-    public function column($column, $index = null)
+    public function column(string $column, ?string $index = null): self
     {
         $this->prepare();
 
@@ -805,9 +803,8 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * getting raw JSON from prepared data
      *
      * @return string
-     * @throws ConditionNotAllowedException
      */
-    public function toJson()
+    public function toJson(): string
     {
         $this->prepare();
 
@@ -816,22 +813,21 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
 
     /**
      * @return mixed
-     * @throws ConditionNotAllowedException
      */
-    public function toArray()
+    public function toArray(): array
     {
         $this->prepare();
         $maps = $this->_data;
+
         return convert_to_array($maps);
     }
 
     /**
      * getting all keys from prepared data
      *
-     * @return object|array
-     * @throws ConditionNotAllowedException
+     * @return QueryEngine
      */
-    public function keys()
+    public function keys(): self
     {
         $this->prepare();
 
@@ -841,10 +837,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * getting all values from prepared data
      *
-     * @return object|array
-     * @throws ConditionNotAllowedException
+     * @return QueryEngine
      */
-    public function values()
+    public function values(): self
     {
         $this->prepare();
 
@@ -855,11 +850,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * getting chunk values from prepared data
      *
      * @param int $amount
-     * @param callable $fn
-     * @return object|array|bool
-     * @throws ConditionNotAllowedException
+     * @param callable|null $fn
+     * @return array
      */
-    public function chunk($amount, callable $fn = null)
+    public function chunk(int $amount, ?callable $fn = null): array
     {
         $this->prepare();
 
@@ -873,7 +867,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
                     $chunks[] = $return;
                 }
             }
-            return count($chunks) > 0 ? $chunks : null;
+            return count($chunks) > 0 ? $chunks : [];
         }
 
         return $chunk_value;
@@ -882,11 +876,11 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Pluck is the alias of column
      *
-     * @param $column
+     * @param string $column
      * @param null $key
-     * @return array|mixed|QueryEngine
+     * @return QueryEngine
      */
-    public function pluck($column, $key = null)
+    public function pluck(string $column, mixed $key = null): self
     {
         return $this->column($column, $key);
     }
@@ -894,37 +888,37 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Array pop from current result set
      *
-     * @return array|mixed|QueryEngine
+     * @return QueryEngine
      */
-    public function pop()
+    public function pop(): self
     {
         $this->prepare();
-
         $data = array_pop($this->_data);
+
         return $this->makeResult($data);
     }
 
     /**
      * Array shift from current result set
      *
-     * @return array|mixed|QueryEngine
+     * @return QueryEngine
      */
-    public function shift()
+    public function shift(): self
     {
         $this->prepare();
-
         $data = array_shift($this->_data);
+
         return $this->makeResult($data);
     }
 
     /**
      * Push the given data in current result set
      *
-     * @param $data
-     * @param null $key
+     * @param mixed $data
+     * @param string|null $key
      * @return $this
      */
-    public function push($data, $key = null)
+    public function push(mixed $data, ?string $key = null): self
     {
         $this->prepare();
 

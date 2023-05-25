@@ -1,8 +1,8 @@
 <?php
 
-namespace Nahid\QArray;
+declare(strict_types=1);
 
-use Nahid\QArray\Exceptions\KeyNotPresentException;
+namespace Nahid\QArray;
 
 final class ConditionFactory
 {
@@ -14,7 +14,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function equal($value, $comparable)
+    public static function equal(mixed $value, mixed $comparable): bool
     {
         return $value == $comparable;
     }
@@ -27,7 +27,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function strictEqual($value, $comparable)
+    public static function strictEqual($value, $comparable): bool
     {
         return $value === $comparable;
     }
@@ -40,7 +40,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function notEqual($value, $comparable)
+    public static function notEqual(mixed $value, mixed $comparable): bool
     {
         return $value != $comparable;
     }
@@ -53,7 +53,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function strictNotEqual($value, $comparable)
+    public static function strictNotEqual(mixed $value, mixed $comparable): bool
     {
         return $value !== $comparable;
     }
@@ -66,7 +66,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function greaterThan($value, $comparable)
+    public static function greaterThan(mixed $value, mixed $comparable): bool
     {
         return $value > $comparable;
     }
@@ -79,7 +79,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function lessThan($value, $comparable)
+    public static function lessThan(mixed $value, mixed $comparable): bool
     {
         return $value < $comparable;
     }
@@ -92,7 +92,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function greaterThanOrEqual($value, $comparable)
+    public static function greaterThanOrEqual(mixed $value, mixed $comparable): bool
     {
         return $value >= $comparable;
     }
@@ -105,7 +105,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function lessThanOrEqual($value, $comparable)
+    public static function lessThanOrEqual(mixed $value, mixed $comparable): bool
     {
         return $value <= $comparable;
     }
@@ -118,7 +118,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function in($value, $comparable)
+    public static function in(mixed $value, mixed $comparable): bool
     {
         return (is_array($comparable) && in_array($value, $comparable));
     }
@@ -131,19 +131,19 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function notIn($value, $comparable)
+    public static function notIn(mixed $value, mixed $comparable): bool
     {
         return (is_array($comparable) && !in_array($value, $comparable));
     }
 
-    public static function inArray($value, $comparable)
+    public static function inArray(mixed $value, mixed $comparable): bool
     {
         if (!is_array($value)) return false;
 
         return in_array($comparable, $value);
     }
 
-    public static function inNotArray($value, $comparable)
+    public static function inNotArray(mixed $value, mixed $comparable): bool
     {
         return !static::inArray($value, $comparable);
     }
@@ -155,7 +155,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function isNull($value, $comparable)
+    public static function isNull(mixed $value, mixed $comparable): bool
     {
         return is_null($value);
     }
@@ -167,22 +167,22 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function isNotNull($value, $comparable)
+    public static function isNotNull(mixed $value, mixed $comparable): bool
     {
         return !$value instanceof KeyNotExists && !is_null($value);
     }
 
-    public static function notExists($value, $comparable)
+    public static function notExists(mixed $value, mixed $comparable): bool
     {
         return $value instanceof KeyNotExists;
     }
 
-    public static function exists($value, $comparable)
+    public static function exists(mixed $value, mixed $comparable): bool
     {
         return !static::notExists($value, $comparable);
     }
 
-    public static function isBool($value, $comparable)
+    public static function isBool(mixed $value, mixed $comparable): bool
     {
         return is_bool($comparable);
     }
@@ -195,7 +195,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function startWith($value, $comparable)
+    public static function startWith(mixed $value, mixed $comparable): bool
     {
         if (is_array($comparable) || is_array($value) || is_object($comparable) || is_object($value)) {
             return false;
@@ -216,7 +216,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function endWith($value, $comparable)
+    public static function endWith(mixed $value, mixed $comparable): bool
     {
         if (is_array($comparable) || is_array($value) || is_object($comparable) || is_object($value)) {
             return false;
@@ -237,7 +237,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function match($value, $comparable)
+    public static function match(mixed $value, mixed $comparable): bool
     {
         if (is_array($comparable) || is_array($value) || is_object($comparable) || is_object($value)) {
             return false;
@@ -260,9 +260,9 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function contains($value, $comparable)
+    public static function contains(mixed $value, mixed $comparable): bool
     {
-        return (strpos($value, $comparable) !== false);
+        return str_contains($value, $comparable);
     }
 
     /**
@@ -273,7 +273,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function dateEqual($value, $comparable, $format = 'Y-m-d')
+    public static function dateEqual(mixed $value, mixed $comparable, string $format = 'Y-m-d'): bool
     {
         $date = date($format, strtotime($value));
         return $date == $comparable;
@@ -288,7 +288,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function instance($value, $comparable)
+    public static function instance(mixed $value, mixed $comparable): bool
     {
         return $value instanceof $comparable;
     }
@@ -301,7 +301,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function type($value, $comparable)
+    public static function type(mixed $value, mixed $comparable): bool
     {
         return gettype($value) === $comparable;
     }
@@ -314,7 +314,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function any($value, $comparable)
+    public static function any(mixed $value, mixed $comparable): bool
     {
         if (is_array($value)) {
             return in_array($comparable, $value);
@@ -331,7 +331,7 @@ final class ConditionFactory
      *
      * @return bool
      */
-    public static function execFunction($value, $comparable)
+    public static function execFunction(mixed $value, mixed $comparable): bool
     {
         if (is_array($value)) {
             return in_array($comparable, $value);
