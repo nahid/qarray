@@ -486,6 +486,10 @@ class Clause
         return $this;
     }
 
+    public function getTraveler(): string
+    {
+        return $this->_traveler;
+    }
     /**
      * Get data from nested array
      *
@@ -784,7 +788,7 @@ class Clause
     public function whereDataType(string $key, mixed $value): self
     {
         $this->where($key, 'type', $value);
-        
+
         return $this;
     }
 
