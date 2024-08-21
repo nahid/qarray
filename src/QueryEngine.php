@@ -10,6 +10,20 @@ use function DeepCopy\deep_copy;
 
 abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \Countable
 {
+    /**
+     * this constructor read data from file and parse the data for query
+     *
+     * @param ?string $data
+     */
+    public function __construct(?string $data = null)
+    {
+        if ((is_file($data) && file_exists($data)) || filter_var($data, FILTER_VALIDATE_URL)) {
+            $this->collect($this->readPath($data));
+
+        } else {
+            $this->collect($this->parseData($data));
+        }
+    }
 
     /**
      * return json string when echoing the instance
@@ -35,11 +49,11 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     public abstract function parseData(string|array $data): array;
 
     /**
-     * @param string $key
+     * @param mixed $key
      * @return mixed
      * @throws KeyNotPresentException
      */
-    public function __get(string $key): mixed
+    public function __get(mixed $key): mixed
     {
         if (isset($this->_data[$key]) or is_null($this->_data[$key])) {
             return $this->_data[$key];
@@ -51,10 +65,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Property override for current object
      *
-     * @param string $key
+     * @param mixed $key
      * @param mixed $val
      */
-    public function __set(string $key, mixed $val): void
+    public function __set(mixed $key, mixed $val): void
     {
         $this->_data[$key] = $val;
     }
@@ -123,7 +137,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      */
     public function rewind(): void
     {
-         reset($this->_data);
+        reset($this->_data);
     }
 
     /**
