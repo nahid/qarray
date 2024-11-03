@@ -615,7 +615,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      */
     public function sort($order = 'asc')
     {
-        $this->_data = convert_to_array($this->_data);
+        $this->_data = Utilities::toArray($this->_data);
 
         if ($order == 'desc') {
             rsort($this->_data);
@@ -834,7 +834,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     {
         $this->prepare();
         $maps = $this->_data;
-        return convert_to_array($maps);
+        return Utilities::toArray($maps);
     }
 
     /**
