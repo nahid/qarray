@@ -8,3 +8,4 @@
 /phpunit.xml.dist	    export-ignore
 /.travis.yml            export-ignore
 /media                  export-ignore
+/data.json              export-ignore

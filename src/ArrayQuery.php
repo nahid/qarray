@@ -13,6 +13,7 @@ class ArrayQuery extends QueryEngine
 
     public function __construct(array $data = [])
     {
+        parent::__construct();
         $this->collect($data);
     }
 

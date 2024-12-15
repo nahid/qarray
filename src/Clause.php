@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nahid\QArray;
 
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
+use Nahid\QArray\Parsers\AstParser;
+use Nahid\QArray\Parsers\NodeVisitor;
 use function DeepCopy\deep_copy;
 
 class Clause
@@ -17,13 +19,13 @@ class Clause
 
     /**
      * contain prepared data for process
-     * @var mixed
+     * @var array<string, mixed>
      */
     protected array $_data;
 
     /**
      * contains column names
-     * @var array
+     * @var array<string, mixed>
      */
     protected array $_select = [];
 
@@ -40,21 +42,21 @@ class Clause
 
     /**
      * contains column names for except
-     * @var array
+     * @var array<string, mixed>
      */
     protected array $_except = [];
 
     /**
      * Stores base contents.
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected array $_original = [];
 
     /**
      * Stores all conditions.
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected array $_conditions = [];
 
@@ -68,9 +70,11 @@ class Clause
      */
     protected string $_traveler = '.';
 
+    protected AstParser $parser;
+
     /**
      * map all conditions with methods
-     * @var array
+     * @var array<string, string>
      */
     protected static array $_conditionsMap = [
         '=' => 'equal',
@@ -109,8 +113,19 @@ class Clause
         'bool' => 'isBool',
     ];
 
+    public function __construct(?AstParser $astParser = null)
+    {
+        Utilities::$_traveler = $this->_traveler;
+
+        if (is_null($astParser)) {
+            $astParser = new AstParser(new NodeVisitor());
+        }
+
+        $this->parser = $astParser;
+    }
+
     /**
-     * @param array $props
+     * @param array<string, mixed> $props
      * @return $this
      */
     public function fresh(array $props = []): self
@@ -143,7 +158,7 @@ class Clause
     /**
      * import parsed data from raw json
      *
-     * @param array $data
+     * @param string[] $data
      * @return self
      */
     public function collect(array $data): self
@@ -241,9 +256,9 @@ class Clause
      * Parse object to array
      *
      * @param object $obj
-     * @return array|mixed
+     * @return array
      */
-    protected function objectToArray(object $obj)
+    protected function objectToArray(object $obj): array
     {
         $obj = get_object_vars($obj);
 
@@ -297,8 +312,8 @@ class Clause
     /**
      * Taking desire columns from result
      *
-     * @param array $columns
-     * @return array
+     * @param array<string> $columns
+     * @return array<string>
      */
     public function takeColumn(array $columns): array
     {
@@ -308,18 +323,18 @@ class Clause
     /**
      * selecting specific column
      *
-     * @param array $columns
-     * @return array
+     * @param array<string> $data
+     * @return array<string>
      */
-    protected function selectColumn(array $columns): array
+    protected function selectColumn(array $data): array
     {
         $keys = $this->_select;
         if (count($keys) == 0) {
-            return $columns;
+            return $data;
         }
 
         $select = array_keys($keys);
-        $properties = array_intersect_key($columns, array_flip((array) $select));
+        $properties = array_intersect_key($data, array_flip((array) $select));
         $row = [];
         foreach ($properties as $column => $property) {
             $fn = null;
@@ -327,9 +342,10 @@ class Clause
                 $fn = $keys[$column];
             }
 
-            if (is_callable($fn)) {
-                $property = call_user_func_array($fn, [$property, $columns]);
+            if (AstParser::isValidFunctionCall($fn)) {
+                $property = $this->parser->execute($fn, $data);
             }
+
 
             $row[$column] = $property;
         }
@@ -341,8 +357,8 @@ class Clause
     /**
      * selecting specific column
      *
-     * @param array $columns
-     * @return array
+     * @param array<string> $columns
+     * @return array<string>
      */
     protected function exceptColumn( array $columns): array
     {
@@ -359,10 +375,10 @@ class Clause
     /**
      * select desired column
      *
-     * @param array $columns
+     * @param string $columns
      * @return $this
      */
-    public function select(string ...$columns ): self
+    public function select(mixed $columns = null): self
     {
         $this->setSelect($columns);
 
@@ -372,10 +388,14 @@ class Clause
     /**
      * setter for select columns
      *
-     * @param array $columns
+     * @param array<string> $columns
      */
-    protected function setSelect(array $columns = []): void
+    protected function setSelect(mixed $columns = null): void
     {
+        if (!$columns || !is_array($columns)) {
+            $columns = func_get_args();
+        }
+
         if (count($columns) <= 0 ) {
             return;
         }
@@ -482,6 +502,7 @@ class Clause
     public function setTraveler(string $delimiter): self
     {
         $this->_traveler = $delimiter;
+        Utilities::$_traveler = $delimiter;
 
         return $this;
     }
@@ -599,11 +620,20 @@ class Clause
             $params = [];
             $function = null;
 
-            $value = $this->arrayGet($data, $rule['key']);
+            if (AstParser::isValidFunctionCall($rule['key'])) {
+                $valueFrom = $this->parser->execute($rule['key'], $data);
+            } else {
+                $valueFrom = $this->arrayGet($data, $rule['key']);
+            }
 
             if (!is_callable($rule['condition'])) {
+                $valueTo = $rule['value'];
+                if (AstParser::isValidFunctionCall($rule['value'])) {
+                    $valueTo = $this->parser->execute($rule['value'], $data);
+                }
+
                 $function = $this->makeConditionalFunctionFromOperator($rule['condition']);
-                $params = [$value, $rule['value']];
+                $params = [$valueFrom, $valueTo];
             }
 
             if (is_callable($rule['condition'])) {
@@ -611,7 +641,7 @@ class Clause
                 $params = [$data];
             }
 
-            if ($value instanceof KeyNotExists) {
+            if ($valueFrom instanceof KeyNotExists) {
                 $andDecision = false;
             }
 

@@ -17,12 +17,20 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      */
     public function __construct(?string $data = null)
     {
-        if ((is_file($data) && file_exists($data)) || filter_var($data, FILTER_VALIDATE_URL)) {
-            $this->collect($this->readPath($data));
+        parent::__construct();
 
+        if (is_null($data)) {
+            $this->collect([]);
         } else {
-            $this->collect($this->parseData($data));
+            if ((is_file($data) && file_exists($data)) || filter_var($data, FILTER_VALIDATE_URL)) {
+                $this->collect($this->readPath($data));
+
+            } else {
+                $this->collect($this->parseData($data));
+            }
         }
+
+
     }
 
     /**
@@ -222,10 +230,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param string ...$columns
      * @return QueryEngine
      */
-    public function get(string ...$columns): self
+    public function get(mixed $columns = null): self
     {
-
         $this->setSelect($columns);
+
         $this->prepare();
         return $this->makeResult($this->_data);
     }
@@ -236,7 +244,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param string ...$columns
      * @return mixed
      */
-    public function receive(string ...$columns): mixed
+    public function receive(mixed $columns): mixed
     {
         $this->setSelect($columns);
 
@@ -483,7 +491,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param array $columns
      * @return QueryEngine|null
      */
-    public function first(string ...$columns): ?self
+    public function first(?array $columns = null): ?self
     {
         $this->prepare();
 
@@ -505,7 +513,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param array $columns
      * @return QueryEngine|null
      */
-    public function last(string ...$columns): ?self
+    public function last(?array $columns = null): ?self
     {
         $this->prepare();
 
@@ -526,7 +534,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param array $columns
      * @return QueryEngine|null
      */
-    public function nth(int $index, string ...$columns): ?self
+    public function nth(int $index, ?array $columns = null): ?self
     {
         $this->prepare();
 
@@ -706,11 +714,11 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     {
         $this->prepare();
         $data = [];
-        
+
         foreach ($this->_data as $key => $val) {
             $data[] = $fn($key, $val);
         }
-        
+
         return $this->makeResult($data);
     }
 
