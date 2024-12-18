@@ -33,6 +33,6 @@
       "Nahid\\JsonQ\\Tests\\": "tests/"
     }
   },
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "prefer-stable": true
 }
