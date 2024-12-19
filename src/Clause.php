@@ -9,6 +9,12 @@ use Nahid\QArray\Parsers\AstParser;
 use Nahid\QArray\Parsers\NodeVisitor;
 use function DeepCopy\deep_copy;
 
+/**
+ * Class Clause
+ * @template TKey as array-key
+ * @template TValue
+ * @package Nahid\QArray
+ */
 class Clause
 {
     /**
@@ -19,7 +25,7 @@ class Clause
 
     /**
      * contain prepared data for process
-     * @var array<string, mixed>
+     * @var array<TKey, TValue>
      */
     protected array $_data;
 
@@ -171,7 +177,7 @@ class Clause
     /**
      * import parsed data from raw json
      *
-     * @param array<string, mixed> $data
+     * @param array<int, array<TKey, TValue>> $data
      * @return static
      */
     public function collect(array $data): static

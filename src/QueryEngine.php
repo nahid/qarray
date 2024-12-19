@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace Nahid\QArray;
 
+use ArrayAccess;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Exceptions\KeyNotPresentException;
 use function DeepCopy\deep_copy;
 
-abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \Countable
+/**
+ * @template TKey of array-key
+ * @template TValue
+ * @extends Clause<TKey, TValue>
+ */
+abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Countable
 {
     /**
      * return json string when echoing the instance
@@ -50,8 +56,8 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Property override for current object
      *
-     * @param mixed $key
-     * @param mixed $val
+     * @param TKey $key
+     * @param TValue $val
      */
     public function __set(mixed $key, mixed $val): void
     {
@@ -59,7 +65,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     }
 
     /**
-     * @return array
+     * @return array<TKey, TValue>
      */
     public function __invoke(): array
     {
@@ -69,7 +75,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Implementation of ArrayAccess : check existence of the target offset
      *
-     * @param mixed $offset
+     * @param TKey $offset
      * @return bool
      */
     public function offsetExists(mixed $offset): bool
@@ -80,7 +86,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Implementation of ArrayAccess : Get the target offset
      *
-     * @param mixed $offset
+     * @param TKey $offset
      * @return mixed|KeyNotExists
      */
     public function offsetGet(mixed $offset): mixed
@@ -95,8 +101,8 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Implementation of ArrayAccess : Set the target offset
      *
-     * @param mixed $offset
-     * @param mixed $value
+     * @param TKey $offset
+     * @param TValue $value
      */
     public function offsetSet(mixed $offset, mixed $value): void
     {
@@ -106,7 +112,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Implementation of ArrayAccess : Unset the target offset
      *
-     * @param mixed $offset
+     * @param TKey $offset
      */
     public function offsetUnset(mixed $offset): void
     {
@@ -144,9 +150,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * Implementation of Iterator : Return the key of the current element
      *
-     * @return mixed
+     * @return string|int|null
      */
-    public function key(): mixed
+    public function key(): string|int|null
     {
         return key($this->_data);
     }
@@ -175,9 +181,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * Deep copy current instance
      *
      * @param bool $fresh
-     * @return QueryEngine
+     * @return static
      */
-    public function copy(bool $fresh = false): self
+    public function copy(bool $fresh = false): static
     {
         if ($fresh) {
             $this->fresh([
@@ -194,9 +200,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * Alias of from() method
      *
      * @param string $node
-     * @return $this
+     * @return static
      */
-    public function at(string $node = '.'): self
+    public function at(string $node = '.'): static
     {
         return $this->from($node);
     }
@@ -204,21 +210,22 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * getting prepared data
      *
-     * @param string ...$columns
-     * @return QueryEngine
+     * @param ?array<string> $columns
+     * @return static
      */
-    public function get(mixed $columns = null): self
+    public function get(?array $columns = null): static
     {
         $this->setSelectColumns($columns);
 
         $this->run();
+
         return $this->processOutput($this->_data);
     }
 
     /**
      * getting prepared data
      *
-     * @param ?array<string, mixed> $columns
+     * @param ?array<string> $columns
      * @return mixed
      */
     public function receive(?array $columns = null): mixed
@@ -231,12 +238,12 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * alias of get method
      *
-     * @param string ...$columns
-     * @return QueryEngine
+     * @param ?array<string> $columns
+     * @return static
      */
-    public function fetch(string ...$columns): self
+    public function fetch(?array $columns = null): static
     {
-        return $this->get(...$columns);
+        return $this->get($columns);
     }
 
     /**
@@ -254,21 +261,21 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * reset given data to the $_data
      *
-     * @param mixed $data
+     * @param array<int, array<TKey, TValue>> $data
      * @param bool $fresh
-     * @return QueryEngine
+     * @return static
      */
-    public function reset(array $data = [], bool $fresh = false): self
+    public function reset(array $data = [], bool $fresh = false): static
     {
         if ($data === []) {
             $data = deep_copy($this->_original);
         }
 
         if ($fresh) {
-            $self = new static();
-            $self->collect($data);
+            $static = new static();
+            $static->collect($data);
 
-            return $self;
+            return $static;
         }
 
         $this->collect($data);
@@ -280,9 +287,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * getting group data from specific column
      *
      * @param string $column
-     * @return $this
+     * @return static
      */
-    public function groupBy(string $column): self
+    public function groupBy(string $column): static
     {
         $this->run();
 
@@ -302,9 +309,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * Group by count from array value
      *
      * @param string $column
-     * @return $this
+     * @return static
      */
-    public function countGroupBy(string $column): self
+    public function countGroupBy(string $column): static
     {
 
         $this->run();
@@ -333,9 +340,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * getting distinct data from specific column
      *
      * @param string $column
-     * @return $this
+     * @return static
      */
-    public function distinct(string $column): self
+    public function distinct(string $column): static
     {
         $this->run();
 
@@ -468,7 +475,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param array $columns
      * @return QueryEngine|null
      */
-    public function first(?array $columns = null): ?self
+    public function first(?array $columns = null): ?static
     {
         $this->setSelectColumns($columns);
         $this->run();
@@ -490,7 +497,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param array $columns
      * @return QueryEngine|null
      */
-    public function last(?array $columns = null): ?self
+    public function last(?array $columns = null): ?static
     {
         $this->setSelectColumns($columns);
         $this->run();
@@ -511,7 +518,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param array $columns
      * @return QueryEngine|null
      */
-    public function nth(int $index, ?array $columns = null): ?self
+    public function nth(int $index, ?array $columns = null): ?static
     {
         $this->setSelectColumns($columns);
         $this->run();
@@ -541,7 +548,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param string $order
      * @return QueryEngine
      */
-    public function sortBy(string $column, string $order = 'asc'): self
+    public function sortBy(string $column, string $order = 'asc'): static
     {
         $this->run();
 
@@ -577,7 +584,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param string $order
      * @return QueryEngine
      */
-    public function sort(string $order = 'asc'): self
+    public function sort(string $order = 'asc'): static
     {
         $this->_data = convert_to_array($this->_data);
 
@@ -607,9 +614,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
     /**
      * @param int $index
      * @param string|null $column
-     * @return $this|self|null
+     * @return static|static|null
      */
-    public function find(int $index, ?string $column = null): ?self
+    public function find(int $index, ?string $column = null): ?static
     {
         $this->run();
 
@@ -665,10 +672,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * transform prepared data by using callable function
      *
      * @param callable $fn
-     * @return self
+     * @return static
      * @throws ConditionNotAllowedException
      */
-    public function transform(callable $fn): self
+    public function transform(callable $fn): static
     {
         $this->run();
         $data = [];
@@ -687,7 +694,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param callable $fn
      * @return QueryEngine
      */
-    public function map(callable $fn): self
+    public function map(callable $fn): static
     {
         $this->run();
         $data = [];
@@ -706,7 +713,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param bool $key
      * @return QueryEngine
      */
-    public function filter(callable $fn, bool $key = false): self
+    public function filter(callable $fn, bool $key = false): static
     {
         $this->run();
 
@@ -730,7 +737,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param string $node
      * @return QueryEngine
      */
-    public function then(string $node = '.'): self
+    public function then(string $node = '.'): static
     {
         $this->run();
         $this->from($node);
@@ -743,10 +750,10 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @param string|array $key
      * @param string $delimiter
-     * @return self
+     * @return static
      * @throws ConditionNotAllowedException|\Exception
      */
-    public function implode(string|array $key, string $delimiter = ','): self
+    public function implode(string|array $key, string $delimiter = ','): static
     {
         $this->run();
 
@@ -788,9 +795,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @param string $column
      * @param string|null $index
-     * @return self
+     * @return static
      */
-    public function column(string $column, ?string $index = null): self
+    public function column(string $column, ?string $index = null): static
     {
         $this->run();
 
@@ -826,7 +833,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @return QueryEngine
      */
-    public function keys(): self
+    public function keys(): static
     {
         $this->run();
 
@@ -838,7 +845,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @return QueryEngine
      */
-    public function values(): self
+    public function values(): static
     {
         $this->run();
 
@@ -879,7 +886,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      * @param null $key
      * @return QueryEngine
      */
-    public function pluck(string $column, mixed $key = null): self
+    public function pluck(string $column, mixed $key = null): static
     {
         return $this->column($column, $key);
     }
@@ -889,7 +896,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @return QueryEngine
      */
-    public function pop(): self
+    public function pop(): static
     {
         $this->run();
         $data = array_pop($this->_data);
@@ -902,7 +909,7 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @return QueryEngine
      */
-    public function shift(): self
+    public function shift(): static
     {
         $this->run();
         $data = array_shift($this->_data);
@@ -915,9 +922,9 @@ abstract class QueryEngine extends Clause implements \ArrayAccess, \Iterator, \C
      *
      * @param mixed $data
      * @param string|null $key
-     * @return $this
+     * @return static
      */
-    public function push(mixed $data, ?string $key = null): self
+    public function push(mixed $data, ?string $key = null): static
     {
         $this->run();
 
