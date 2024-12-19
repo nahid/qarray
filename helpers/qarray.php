@@ -1,7 +1,7 @@
 <?php
 
 use Nahid\QArray\QueryEngine;
-use Nahid\QArray\ArrayQuery;
+use Nahid\QArray\Query;
 
 if (!function_exists('convert_to_array')) {
     function convert_to_array($data)
@@ -34,7 +34,7 @@ if (!function_exists('qarray')) {
             $data = [];
         }
 
-        $instance = ArrayQuery::getInstance();
+        $instance = Query::getInstance();
 
         return $instance->collect($data);
     }

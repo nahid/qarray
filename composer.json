@@ -18,12 +18,12 @@
     "nikic/php-parser": "^5.3"
   },
   "require-dev": {
-        "phpunit/phpunit": ">=8.0",
+        "phpunit/phpunit": ">=8.1",
         "symfony/var-dumper": "^6.2",
         "pestphp/pest": "^2.6.1",
         "pestphp/pest-plugin-arch": "^2.1.2",
-        "pestphp/pest-plugin-mock": "^2.0.0",
-        "phpstan/phpstan": "^1.10.15"
+        "phpstan/phpstan": "^1.10.15",
+        "mockery/mockery": "^1.6"
   },
   "autoload": {
     "psr-4": {

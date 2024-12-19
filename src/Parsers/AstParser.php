@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nahid\QArray\Parsers;
 
 use PhpParser\NodeTraverser;

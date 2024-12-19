@@ -70,7 +70,9 @@ class Clause
      */
     protected string $_traveler = '.';
 
-    protected AstParser $parser;
+    protected readonly Options $options;
+
+    protected readonly AstParser $parser;
 
     /**
      * map all conditions with methods
@@ -113,22 +115,33 @@ class Clause
         'bool' => 'isBool',
     ];
 
-    public function __construct(?AstParser $astParser = null)
+    /**
+     * @param Options|null $options
+     */
+    public function __construct(?Options $options = null)
     {
-        Utilities::$_traveler = $this->_traveler;
-
-        if (is_null($astParser)) {
-            $astParser = new AstParser(new NodeVisitor());
+        if (is_null($options)) {
+            $options = new Options();
         }
 
-        $this->parser = $astParser;
+        $this->options = $options;
+
+        $this->setTraveler($this->options->traveler);
+
+        $func = Func::class;
+        if (!is_null($this->options->func) && class_exists($this->options->func)) {
+            $func = $this->options->func;
+        }
+
+        $this->parser = new AstParser(new NodeVisitor($func));
+
     }
 
     /**
      * @param array<string, mixed> $props
-     * @return $this
+     * @return static
      */
-    public function fresh(array $props = []): self
+    public function fresh(array $props = []): static
     {
         $properties = [
             '_data'  => [],
@@ -140,7 +153,7 @@ class Clause
             '_conditions' => [],
             '_take' => null,
             '_offset' => 0,
-            '_traveler' => '.',
+            '_traveler' => $this->options->traveler,
         ];
 
         foreach ($properties as $property=>$value) {
@@ -158,10 +171,10 @@ class Clause
     /**
      * import parsed data from raw json
      *
-     * @param string[] $data
-     * @return self
+     * @param array<string, mixed> $data
+     * @return static
      */
-    public function collect(array $data): self
+    public function collect(array $data): static
     {
         $this->reProcess();
         $this->fresh();
@@ -176,9 +189,9 @@ class Clause
     /**
      * Prepare data from desire conditions
      *
-     * @return $this
+     * @return static
      */
-    protected function prepare(): self
+    protected function run(): static
     {
         if ($this->_isProcessed) {
             return $this;
@@ -244,9 +257,9 @@ class Clause
      * Our system will cache processed data and prevend multiple time processing. If
      * you want to reprocess this method can help you
      *
-     * @return $this
+     * @return static
      */
-    public function reProcess(): self
+    public function reProcess(): static
     {
         $this->_isProcessed = false;
         return $this;
@@ -294,9 +307,9 @@ class Clause
      * Set node path, where QArray start to prepare
      *
      * @param string $node
-     * @return self
+     * @return static
      */
-    public function from(string $node = '.'): self
+    public function from(string $node = '.'): static
     {
         $this->_isProcessed = false;
 
@@ -334,23 +347,29 @@ class Clause
         }
 
         $select = array_keys($keys);
-        $properties = array_intersect_key($data, array_flip((array) $select));
-        $row = [];
-        foreach ($properties as $column => $property) {
-            $fn = null;
-            if (array_key_exists($column, $keys)) {
-                $fn = $keys[$column];
-            }
 
+        foreach ($keys as $column => $fn) {
             if (AstParser::isValidFunctionCall($fn)) {
-                $property = $this->parser->execute($fn, $data);
+                $data[$column] = $this->parser->execute($fn, $data);
+            } elseif (is_string($fn)) {
+                $data[$column] = Utilities::arrayGet($data, $fn);
             }
 
+            if (is_int($fn) && is_string($column)) {
+                $data[str_replace(Utilities::$_traveler, '_', $column)] = Utilities::arrayGet($data, $column);
+            }
 
-            $row[$column] = $property;
         }
 
-        return $row;
+        $cols = array_flip($select);
+
+        $columns = [];
+
+        foreach ($cols as $key => $value) {
+            $columns[str_replace(Utilities::$_traveler, '_', $key)] = $value;
+        }
+
+        return array_intersect_key($data, $columns);
     }
 
 
@@ -363,7 +382,6 @@ class Clause
     protected function exceptColumn( array $columns): array
     {
         $keys = $this->_except;
-
         if (count($keys) == 0) {
             return $columns;
         }
@@ -376,11 +394,11 @@ class Clause
      * select desired column
      *
      * @param string $columns
-     * @return $this
+     * @return static
      */
-    public function select(mixed $columns = null): self
+    public function select(mixed $columns = null): static
     {
-        $this->setSelect($columns);
+        $this->setSelectColumns($columns);
 
         return $this;
     }
@@ -390,10 +408,10 @@ class Clause
      *
      * @param array<string> $columns
      */
-    protected function setSelect(mixed $columns = null): void
+    protected function setSelectColumns(?array $columns = null): void
     {
         if (!$columns || !is_array($columns)) {
-            $columns = func_get_args();
+            return;
         }
 
         if (count($columns) <= 0 ) {
@@ -415,9 +433,9 @@ class Clause
      * Set offset value for slice of array
      *
      * @param int $offset
-     * @return $this
+     * @return static
      */
-    public function offset(int $offset): self
+    public function offset(int $offset): static
     {
         $this->_offset = $offset;
 
@@ -428,9 +446,9 @@ class Clause
      * Set taken value for slice of array
      *
      * @param int $take
-     * @return $this
+     * @return static
      */
-    public function take(int $take): self
+    public function take(int $take): static
     {
         $this->_take = $take;
 
@@ -442,9 +460,9 @@ class Clause
      * select desired column for except
      *
      * @param array $columns
-     * @return $this
+     * @return static
      */
-    public function except(string ...$columns): self
+    public function except(string ...$columns): static
     {
         if (count($columns) > 0 ){
             $this->_except = $columns;
@@ -459,11 +477,11 @@ class Clause
      *
      * @param mixed $data
      * @param bool $newInstance
-     * @return self
+     * @return static
      */
-    protected function makeResult(mixed $data, bool $newInstance = false): self
+    protected function processOutput(mixed $data, bool $newInstance = false): static
     {
-        if (!$newInstance || is_null($data) || is_scalar($data) || !is_array($data)) {
+        if (!$newInstance || !is_array($data)) {
             $this->_data = $data;
             return $this;
         }
@@ -482,9 +500,9 @@ class Clause
      *
      * @param array $value
      * @param array $meta
-     * @return self
+     * @return static
      */
-    protected function instanceWithValue(array $value, array $meta = []): self
+    protected function instanceWithValue(array $value, array $meta = []): static
     {
         $instance = new static();
         $instance = $instance->collect($value);
@@ -497,9 +515,9 @@ class Clause
      * Set traveler delimiter
      *
      * @param string $delimiter
-     * @return self
+     * @return static
      */
-    public function setTraveler(string $delimiter): self
+    public function setTraveler(string $delimiter): static
     {
         $this->_traveler = $delimiter;
         Utilities::$_traveler = $delimiter;
@@ -668,11 +686,11 @@ class Clause
      */
     protected function makeConditionalFunctionFromOperator(string $condition): array
     {
-        if (!isset(self::$_conditionsMap[$condition])) {
+        if (!isset(static::$_conditionsMap[$condition])) {
             throw new ConditionNotAllowedException("Exception: {$condition} condition not allowed");
         }
 
-        $function = self::$_conditionsMap[$condition];
+        $function = static::$_conditionsMap[$condition];
         if (!is_callable($function)) {
             if (!method_exists(ConditionFactory::class, $function)) {
                 throw new ConditionNotAllowedException("Exception: {$condition} condition not allowed");
@@ -690,9 +708,9 @@ class Clause
      * @param string|callable $key
      * @param string $condition
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function where(string|callable $key, mixed $condition = null, mixed $value = null): self
+    public function where(string|callable $key, mixed $condition = null, mixed $value = null): static
     {
         if (!is_null($condition) && is_null($value)) {
             $value = $condition;
@@ -718,9 +736,9 @@ class Clause
      * @param string|callable $key
      * @param string $condition
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function orWhere(string|callable $key, mixed $condition = null, mixed $value = null): self
+    public function orWhere(string|callable $key, mixed $condition = null, mixed $value = null): static
     {
         if (!is_null($condition) && is_null($value)) {
             $value = $condition;
@@ -742,9 +760,9 @@ class Clause
      * make a callable where condition for custom logic implementation
      *
      * @param callable $fn
-     * @return $this
+     * @return static
      */
-    public function callableWhere(callable $fn): self
+    public function callableWhere(callable $fn): static
     {
         if (count($this->_conditions) < 1) {
             $this->_conditions[] = [];
@@ -757,9 +775,9 @@ class Clause
      * make a callable orwhere condition for custom logic implementation
      *
      * @param callable $fn
-     * @return $this
+     * @return static
      */
-    public function orCallableWhere(callable $fn): self
+    public function orCallableWhere(callable $fn): static
 
     {
         $this->_conditions[] = [];
@@ -775,9 +793,9 @@ class Clause
      * @param string $key
      * @param string $condition
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    protected function makeWhere(string $key, mixed $condition = null, mixed $value = null): self
+    protected function makeWhere(string $key, mixed $condition = null, mixed $value = null): static
     {
         $current = end($this->_conditions);
         $index = key($this->_conditions);
@@ -799,9 +817,9 @@ class Clause
      *
      * @param string $key
      * @param array $value
-     * @return $this
+     * @return static
      */
-    public function whereIn(string $key, array $value = []): self
+    public function whereIn(string $key, array $value = []): static
     {
         $this->where($key, 'in', $value);
 
@@ -813,9 +831,9 @@ class Clause
      *
      * @param string $key
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereDataType(string $key, mixed $value): self
+    public function whereDataType(string $key, mixed $value): static
     {
         $this->where($key, 'type', $value);
 
@@ -827,9 +845,9 @@ class Clause
      *
      * @param string $key
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereNotIn(string $key, array $value = []): self
+    public function whereNotIn(string $key, array $value = []): static
     {
         $this->where($key, 'notin', $value);
 
@@ -841,9 +859,9 @@ class Clause
      *
      * @param string $key
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereInArray(string $key, mixed $value): self
+    public function whereInArray(string $key, mixed $value): static
     {
         $this->where($key, 'inarray', $value);
 
@@ -855,9 +873,9 @@ class Clause
      *
      * @param string $key
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereNotInArray(string $key, mixed $value): self
+    public function whereNotInArray(string $key, mixed $value): static
     {
         $this->where($key, 'notinarray', $value);
 
@@ -868,9 +886,9 @@ class Clause
      * make WHERE NULL clause
      *
      * @param string $key
-     * @return $this
+     * @return static
      */
-    public function whereNull(string $key): self
+    public function whereNull(string $key): static
     {
         $this->where($key, 'null', 'null');
 
@@ -882,9 +900,9 @@ class Clause
      * make WHERE Boolean clause
      *
      * @param string $key
-     * @return $this
+     * @return static
      */
-    public function whereBool(string $key): self
+    public function whereBool(string $key): static
     {
         $this->where($key, 'bool');
 
@@ -895,9 +913,9 @@ class Clause
      * make WHERE NOT NULL clause
      *
      * @param string $key
-     * @return $this
+     * @return static
      */
-    public function whereNotNull(string $key): self
+    public function whereNotNull(string $key): static
     {
         $this->where($key, 'notnull', 'null');
 
@@ -908,9 +926,9 @@ class Clause
      * Check the given key is exists in row
      *
      * @param string $key
-     * @return $this
+     * @return static
      */
-    public function whereExists(string $key): self
+    public function whereExists(string $key): static
     {
         $this->where($key, 'exists', 'null');
 
@@ -921,9 +939,9 @@ class Clause
      * Check the given key is not exists in row
      *
      * @param string $key
-     * @return $this
+     * @return static
      */
-    public function whereNotExists(string $key): self
+    public function whereNotExists(string $key): static
     {
         $this->where($key, 'notexists', 'null');
 
@@ -935,9 +953,9 @@ class Clause
      *
      * @param string $key
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereStartsWith(string $key, mixed $value): self
+    public function whereStartsWith(string $key, mixed $value): static
     {
         $this->where($key, 'startswith', $value);
 
@@ -949,9 +967,9 @@ class Clause
      *
      * @param string $key
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereEndsWith(string $key, mixed $value): self
+    public function whereEndsWith(string $key, mixed $value): static
     {
         $this->where($key, 'endswith', $value);
 
@@ -963,9 +981,9 @@ class Clause
      *
      * @param string $key
      * @param string $value
-     * @return $this
+     * @return static
      */
-    public function whereMatch(string $key, mixed $value): self
+    public function whereMatch(string $key, mixed $value): static
     {
         $this->where($key, 'match', $value);
 
@@ -977,9 +995,9 @@ class Clause
      *
      * @param string $key
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereContains(string $key, mixed $value): self
+    public function whereContains(string $key, mixed $value): static
     {
         $this->where($key, 'contains', $value);
 
@@ -991,9 +1009,9 @@ class Clause
      *
      * @param string $key
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereLike(string $key, mixed $value): self
+    public function whereLike(string $key, mixed $value): static
     {
         $this->where($key, 'contains', strtolower($value));
 
@@ -1006,9 +1024,9 @@ class Clause
      * @param string $key
      * @param string $condition
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereDate(string $key, string $condition, mixed $value = null): self
+    public function whereDate(string $key, string $condition, mixed $value = null): static
     {
         return $this->callableWhere(function($row) use($key, $condition, $value) {
             $haystack = $row[$key] ?? null;
@@ -1025,9 +1043,9 @@ class Clause
      *
      * @param string $key
      * @param object|string $object
-     * @return $this
+     * @return static
      */
-    public function whereInstance(string $key, object|string $object): self
+    public function whereInstance(string $key, object|string $object): static
     {
         $this->where($key, 'instance', $object);
 
@@ -1039,9 +1057,9 @@ class Clause
      *
      * @param string $key
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereAny(string $key, mixed $value): self
+    public function whereAny(string $key, mixed $value): static
     {
         $this->where($key, 'any', $value);
 
@@ -1053,9 +1071,9 @@ class Clause
      * @param string $key
      * @param mixed $condition
      * @param mixed $value
-     * @return $this
+     * @return static
      */
-    public function whereCount(string $key, mixed $condition, mixed $value = null): self
+    public function whereCount(string $key, mixed $condition, mixed $value = null): static
     {
         return $this->where($key, function($columnValue, $row) use ($value, $condition) {
             $count = 0;
@@ -1078,8 +1096,8 @@ class Clause
      */
     public static function macro(string $name, callable $fn): bool
     {
-        if (!array_key_exists($name, self::$_conditionsMap)) {
-            self::$_conditionsMap[$name] = $fn;
+        if (!array_key_exists($name, static::$_conditionsMap)) {
+            static::$_conditionsMap[$name] = $fn;
             return true;
         }
 

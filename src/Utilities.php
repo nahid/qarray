@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nahid\QArray;
 
 class Utilities
@@ -7,6 +9,14 @@ class Utilities
 
     public static string $_traveler = '.';
 
+    /**
+     * Get value from array by key
+     *
+     * @param array<string, mixed> $data
+     * @param string $node
+     * @param mixed $default
+     * @return mixed
+     */
     public static function arrayGet(array $data, string $node, mixed $default = null): mixed
     {
         if ($node === '' || $node === static::$_traveler) {
