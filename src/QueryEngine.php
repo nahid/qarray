@@ -186,11 +186,7 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     public function copy(bool $fresh = false): static
     {
         if ($fresh) {
-            $this->fresh([
-                '_data' => $this->_data,
-                '_original' => $this->_original,
-                '_traveler' => $this->_traveler,
-            ]);
+            return $this->reset(data:[], instance: true);
         }
 
         return deep_copy($this);
@@ -228,11 +224,13 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
      * @param ?array<string> $columns
      * @return mixed
      */
-    public function receive(?array $columns = null): mixed
+    public function raw(?array $columns = null): mixed
     {
         $this->setSelectColumns($columns);
 
-        return $this->prepareForReceive();
+        $this->run();
+
+        return $this->getData();
     }
 
     /**
@@ -259,31 +257,6 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     }
 
     /**
-     * reset given data to the $_data
-     *
-     * @param array<int, array<TKey, TValue>> $data
-     * @param bool $fresh
-     * @return static
-     */
-    public function reset(array $data = [], bool $fresh = false): static
-    {
-        if ($data === []) {
-            $data = deep_copy($this->_original);
-        }
-
-        if ($fresh) {
-            $static = new static();
-            $static->collect($data);
-
-            return $static;
-        }
-
-        $this->collect($data);
-
-        return $this;
-    }
-
-    /**
      * getting group data from specific column
      *
      * @param string $column
@@ -294,10 +267,18 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
         $this->run();
 
         $data = [];
-        foreach ($this->_data as $map) {
-            $value = $this->arrayGet($map, $column);
+        foreach ($this->_data as $row) {
+            $value = $this->arrayGet($row, $column);
             if ($value) {
-                $data[$value][] = $map;
+
+                $key = match (gettype($value)) {
+                    'object' => get_class($value),
+                    'boolean' => $value ? 'true' : 'false',
+                    'NULL' => 'null',
+                    default => $value,
+                };
+
+                $data[$key][] = $row;
             }
         }
 
@@ -608,7 +589,7 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     {
         $this->_conditions = [];
 
-        return $this->from($path)->receive();
+        return $this->from($path)->raw();
     }
 
     /**

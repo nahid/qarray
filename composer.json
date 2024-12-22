@@ -44,5 +44,10 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true
         }
+    },
+    "scripts": {
+        "test": "./vendor/bin/pest",
+        "phpstan": "phpstan analyse src --level=7",
+        "phpstan-tests": "phpstan analyse tests --level=7"
     }
 }

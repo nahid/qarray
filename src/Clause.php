@@ -143,35 +143,47 @@ class Clause
 
     }
 
+    public function reset(array $data = [], array $props = [], bool $instance = false): static
+    {
+        if ($data === []) {
+            $data = deep_copy($this->_original);
+        }
+
+        if ($instance) {
+            $static = new static();
+            $static->collect($data);
+            $static->resetProps($props);
+
+            return $static;
+        }
+
+        $this->resetProps($props);
+        $this->collect($data);
+
+        return $this;
+    }
+
+    /**
+     * reset all properties
+     *
+     * @param array<string> $props
+     */
+    public function resetProps(array $props = []): void
+    {
+            $this->_select = $props['_select'] ?? [];
+            $this->_isProcessed = $props['_isProcessed'] ?? false;
+            $this->_node = $props['_node'] ?? '';
+            $this->_except = $props['_except'] ?? [];
+            $this->_conditions = $props['_conditions'] ?? [];
+            $this->_take = $props['_take'] ?? null;
+            $this->_offset = $props['_offset'] ?? 0;
+            $this->setTraveler($this->options->traveler);
+    }
+
     /**
      * @param array<string, mixed> $props
      * @return static
      */
-    public function fresh(array $props = []): static
-    {
-        $properties = [
-            '_data'  => [],
-            '_original' => [],
-            '_select' => [],
-            '_isProcessed' => false,
-            '_node' => '',
-            '_except' => [],
-            '_conditions' => [],
-            '_take' => null,
-            '_offset' => 0,
-            '_traveler' => $this->options->traveler,
-        ];
-
-        foreach ($properties as $property=>$value) {
-            if (isset($props[$property])) {
-                $value = $props[$property];
-            }
-
-            $this->$property = $value;
-        }
-
-        return $this;
-    }
 
 
     /**
@@ -183,9 +195,8 @@ class Clause
     public function collect(array $data): static
     {
         $this->reProcess();
-        $this->fresh();
 
-        $this->_data = deep_copy($data);
+        $this->_data = $data;
         $this->_original = deep_copy($data);
 
         return $this;
@@ -203,7 +214,6 @@ class Clause
             return $this;
         }
 
-        if (count($this->_conditions) > 0) {
             $calculatedData = $this->processQuery();
             if (!is_null($this->_take)) {
                 $calculatedData = array_slice($calculatedData, $this->_offset, $this->_take);
@@ -213,49 +223,6 @@ class Clause
 
             $this->_isProcessed = true;
             return $this;
-        }
-
-        $this->_isProcessed = true;
-        if (!is_null($this->_take)) {
-            $this->_data = array_slice($this->_data, $this->_offset, $this->_take);
-        }
-
-        $this->_data = $this->getData();
-
-        return $this;
-    }
-
-    /**
-     * Prepare data from desire conditions
-     *
-     * @return mixed
-     */
-    protected function prepareForReceive(): mixed
-    {
-        if ($this->_isProcessed) {
-            return $this->_data;
-        }
-
-        if (count($this->_conditions) > 0) {
-            $calculatedData = $this->processQuery();
-            if (!is_null($this->_take)) {
-                $calculatedData = array_slice($calculatedData, $this->_offset, $this->_take);
-            }
-
-            $_data = $calculatedData;
-
-            $this->_isProcessed = true;
-
-            return $_data;
-        }
-
-        $_data = $this->_data;
-        $this->_isProcessed = true;
-        if (!is_null($this->_take)) {
-            $_data = array_slice($this->_data, $this->_offset, $this->_take);
-        }
-
-        return $this->arrayGet($_data, $this->_node);
 
     }
 
@@ -306,7 +273,8 @@ class Clause
      */
     protected function isCollection(array $data): bool
     {
-        return $data !== [] && array_is_list($data) && is_array($data[0]);
+        $firstKey = array_key_first($data);
+        return $data !== [] && (array_is_list($data) || (is_int($firstKey) && is_array($data[$firstKey])));
     }
 
     /**
@@ -482,12 +450,12 @@ class Clause
      * Prepare data for result
      *
      * @param mixed $data
-     * @param bool $newInstance
+     * @param bool $instance
      * @return static
      */
-    protected function processOutput(mixed $data, bool $newInstance = false): static
+    protected function processOutput(mixed $data, bool $instance = false): static
     {
-        if (!$newInstance || !is_array($data)) {
+        if (!$instance || !is_array($data)) {
             $this->_data = $data;
             return $this;
         }
@@ -498,23 +466,8 @@ class Clause
         }*/
 
 
-        return $this->instanceWithValue($data, ['_select' => $this->_select, '_except' => $this->_except]);
-    }
 
-    /**
-     * Create/Copy new instance with given value
-     *
-     * @param array $value
-     * @param array $meta
-     * @return static
-     */
-    protected function instanceWithValue(array $value, array $meta = []): static
-    {
-        $instance = new static();
-        $instance = $instance->collect($value);
-        $instance->fresh($meta);
-
-        return $instance;
+        return $this->reset($data, ['_select' => $this->_select, '_except' => $this->_except], true);
     }
 
     /**
@@ -590,6 +543,14 @@ class Clause
         $_data = $this->getData();
         $conditions = $this->_conditions;
 
+        $hasConditions = count($conditions) > 0;
+        $hasCollection = $this->isCollection($_data);
+        $hasSelect = count($this->_select) > 0;
+
+        if ($hasConditions && !$hasCollection) {
+            throw new ConditionNotAllowedException('Conditions not allowed without collection');
+        }
+
         /*return array_filter($data, function ($data) use ($conditions) {
             return $this->applyConditions($conditions, $data);
         });*/
@@ -597,14 +558,26 @@ class Clause
         $result = [];
         if (!is_array($_data)) return null;
 
-        foreach ($_data as $key => $data) {
-            $keep = $this->applyConditions($conditions, $data);
-            if ($keep) {
-                $result[$key] = $this->takeColumn($data);
+        if ($hasCollection && $hasConditions) {
+            foreach ($_data as $key => $data) {
+                $keep = $this->applyConditions($conditions, $data);
+                if ($keep) {
+                    $result[$key] = $this->takeColumn($data);
+                }
             }
+
+            return $result;
         }
 
-        return $result;
+        if (!$hasConditions && $hasCollection) {
+            foreach ($_data as $key => $data) {
+                $result[$key] = $this->takeColumn($data);
+            }
+
+            return $result;
+        }
+
+        return $this->takeColumn($_data);
     }
 
     /**
@@ -671,10 +644,10 @@ class Clause
 
             $andDecision = call_user_func_array($function, $params);
 
-           /*
-            if (! $value instanceof KeyNotExists) {
-                $andDecision = call_user_func_array($function, $params);
-            }*/
+            /*
+             if (! $value instanceof KeyNotExists) {
+                 $andDecision = call_user_func_array($function, $params);
+             }*/
 
             //$andDecision = $value instanceof KeyNotExists ? false :  call_user_func_array($function, [$value, $rule['value']]);
             $orDecision &= $andDecision;
