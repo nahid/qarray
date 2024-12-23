@@ -11,7 +11,7 @@ function get_mock_data(): array
         ['id' => 2, 'name' => 'bar', 'age' => 25, 'is_active' => true, 'deleted_at' => null, 'created_at' => '2021-01-02 00:00:00', 'meta' => ['foo' => 'baz', 'baz' => 'quux']],
         ['id' => 3, 'name' => 'baz', 'age' => 30, 'is_active' => false, 'deleted_at' => null, 'created_at' => '2021-01-03 00:00:00', 'meta' => ['foo' => 'quux', 'baz' => 'foo']],
         ['id' => 4, 'name' => 'qux', 'age' => 35, 'is_active' => true, 'deleted_at' => '2023-01-01 00:00:00', 'created_at' => '2021-01-04 00:00:00', 'meta' => ['foo' => 'bar', 'baz' => 'baz']],
-        ['id' => 5, 'name' => 'quux', 'age' => 22, 'is_active' => false, 'deleted_at' => null, 'created_at' => '2021-01-05 00:00:00', 'meta' => ['foo' => 'baz', 'baz' => 'quux']],
+        ['id' => 5, 'name' => 'quux', 'age' => 22, 'is_active' => false, 'deleted_at' => '2023-01-01 00:00:00', 'created_at' => '2021-01-05 00:00:00', 'meta' => ['foo' => 'baz', 'baz' => 'quux']],
         ['id' => 6, 'name' => 'corge', 'age' => 28, 'is_active' => true, 'deleted_at' => null, 'created_at' => '2021-01-06 00:00:00', 'meta' => ['foo' => 'qux', 'baz' => 'bar']],
         ['id' => 7, 'name' => 'grault', 'age' => 26, 'is_active' => true, 'deleted_at' => null, 'created_at' => '2021-01-07 00:00:00', 'meta' => ['foo' => 'bar', 'baz' => 'baz']],
         ['id' => 8, 'name' => 'garply', 'age' => 21, 'is_active' => true, 'deleted_at' => null, 'created_at' => '2021-01-08 00:00:00', 'meta' => ['foo' => 'quux', 'baz' => 'foo']],

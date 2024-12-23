@@ -6,6 +6,7 @@ namespace Nahid\QArray;
 
 use ArrayAccess;
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
+use Nahid\QArray\Exceptions\InvalidArgumentException;
 use Nahid\QArray\Exceptions\KeyNotPresentException;
 use function DeepCopy\deep_copy;
 
@@ -364,6 +365,26 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     }
 
     /**
+     * @param array $data
+     * @param string|null $key
+     * @return array
+     * @throws InvalidArgumentException
+     * @throws KeyNotPresentException
+     */
+    protected function validateDataCanProcessWithKey(array $data, ?string $key = null): array
+    {
+        if (!is_null($key) && !$this->isCollection($data)) {
+            throw new InvalidArgumentException();
+        }
+
+        if (is_null($key) && $this->isCollection($data)) {
+            throw new KeyNotPresentException();
+        }
+
+        return $data;
+    }
+
+    /**
      * sum prepared data
      * @param string|null $column
      * @return int|float
@@ -371,10 +392,11 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     public function sum(?string $column = null): int|float
     {
         $this->run();
-        $data = $this->_data;
+        $data = $this->validateDataCanProcessWithKey($this->_data, $column);
+
 
         $sum = 0;
-        if (is_null($column)) {
+        if (is_null($column) && !$this->isCollection($data)) {
             $sum = array_sum($data);
         } else {
             foreach ($data as $key => $val) {
@@ -398,8 +420,13 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     public function max(?string $column = null): int|float
     {
         $this->run();
-        $data = $this->_data;
-        if (!is_null($column)) {
+        $data = $this->validateDataCanProcessWithKey($this->_data, $column);
+
+        if (is_null($column) && !$this->isCollection($data)) {
+            return max($data);
+        }
+
+        if (!is_null($column) && $this->isCollection($data)) {
             $values = [];
             foreach ($data as $val) {
                 $values[] = $this->arrayGet($val, $column);
@@ -420,9 +447,13 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     public function min(?string $column = null): int|float
     {
         $this->run();
-        $data = $this->_data;
+        $data = $this->validateDataCanProcessWithKey($this->_data, $column);
 
-        if (!is_null($column)) {
+        if (is_null($column) && !$this->isCollection($data)) {
+            return min($data);
+        }
+
+        if (!is_null($column) && $this->isCollection($data)) {
             $values = [];
             foreach ($data as $val) {
                 $values[] = $this->arrayGet($val, $column);

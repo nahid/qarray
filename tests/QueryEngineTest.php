@@ -269,10 +269,255 @@ it('can groupBy the data with specific property', function () {
 
   $queryEngine->collect($mockData);
 
-  $result = $queryEngine->groupBy('deleted_at')->get();
+  $result = $queryEngine->groupBy('deleted_at');
   expect($result->raw())->toHaveKey('2023-01-01 00:00:00')
-      ->and($result->raw()['2023-01-01 00:00:00'])->toHaveCount(1);
+      ->and($result->raw()['2023-01-01 00:00:00'])->toHaveCount(2);
 
+});
+
+it('can countGroupBy the data with specific property', function () {
+  $queryEngine = get_query_engine_instance();
+  $mockData = get_mock_data();
+
+  $queryEngine->collect($mockData);
+
+  $result = $queryEngine->countGroupBy('deleted_at');
+  expect($result->raw())->toHaveKey('2023-01-01 00:00:00')
+      ->and($result->raw()['2023-01-01 00:00:00'])->toBe(2);
+
+});
+
+it('can distinct the data with specific property', function () {
+  $queryEngine = get_query_engine_instance();
+  $mockData = get_mock_data();
+
+  $queryEngine->collect($mockData);
+
+  $result = $queryEngine->distinct('deleted_at');
+  expect($result->raw())->toHaveCount(5)
+      ->and($result->raw()[0])->toHaveKey('deleted_at', '2023-01-01 00:00:00');
+
+});
+
+describe('count()', function () {
+    it('can count the data', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->count();
+        expect($result)->toBe(20);
+    });
+
+    it('can count the data with query results', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('is_active', false)->count();
+        expect($result)->toBe(5);
+    });
+});
+
+describe('sum()', function () {
+    it('can sum the collection data', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->sum('age');
+        expect($result)->toBe(560);
+    });
+
+    it('can sum the collection data of querying resutls', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('age', '>', 30)->sum('age');
+        expect($result)->toBe(238);
+    });
+
+    it('can sum the sets of value', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect([7, 3, 6, 2, 5, 1, 4]);
+
+        $result = $queryEngine->sum();
+        expect($result)->toBe(28);
+    });
+
+
+    it('can not sum non collection value with given key', function () {
+        $queryEngine = get_query_engine_instance();
+
+        $queryEngine->collect([7, 3, 6, 2, 5, 1, 4]);
+
+        $queryEngine->sum('age');
+    })->throws(\Nahid\QArray\Exceptions\InvalidArgumentException::class);
+
+
+    it('can not sum collection of value without any given key', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $queryEngine->sum();
+    })->throws(\Nahid\QArray\Exceptions\KeyNotPresentException::class);
+});
+
+describe('max()', function () {
+    it('can max() the collection data', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->max('age');
+        expect($result)->toBe(37);
+    });
+
+    it('can max() the collection data of querying results', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('age', '<', 30)->max('age');
+        expect($result)->toBe(29);
+    });
+
+    it('can max() the sets of value', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect([7, 3, 6, 2, 5, 9, 4]);
+
+        $result = $queryEngine->max();
+        expect($result)->toBe(9);
+    });
+
+    it('can not max() non collection value with given key', function () {
+        $queryEngine = get_query_engine_instance();
+
+        $queryEngine->collect([7, 3, 6, 2, 5, 1, 4]);
+
+        $queryEngine->max('age');
+    })->throws(\Nahid\QArray\Exceptions\InvalidArgumentException::class);
+
+    it('can not max() collection of value without any given key', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $queryEngine->max();
+    })->throws(\Nahid\QArray\Exceptions\KeyNotPresentException::class);
+});
+
+describe('min()', function () {
+    it('can min() the collection data', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->min('age');
+        expect($result)->toBe(20);
+    });
+
+    it('can min() the collection data of querying results', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('age', '>', 30)->min('age');
+        expect($result)->toBe(31);
+    });
+
+    it('can min() the sets of value', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect([7, 3, 6, 2, 5, 1, 4]);
+
+        $result = $queryEngine->min();
+        expect($result)->toBe(1);
+    });
+
+    it('can not min() non collection value with given key', function () {
+        $queryEngine = get_query_engine_instance();
+
+        $queryEngine->collect([7, 3, 6, 2, 5, 1, 4]);
+
+        $queryEngine->min('age');
+    })->throws(\Nahid\QArray\Exceptions\InvalidArgumentException::class);
+
+    it('can not min() collection of value without any given key', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $queryEngine->min();
+    })->throws(\Nahid\QArray\Exceptions\KeyNotPresentException::class);
+
+});
+
+describe('avg()', function () {
+    it('can avg() the collection data', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->avg('age');
+        expect($result)->toBe(28);
+    });
+
+    it('can avg() the collection data of querying results', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('age', '>', 30)->avg('age');
+        expect($result)->toBe(34);
+    });
+
+    it('can avg() the sets of value', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect([7, 3, 6, 2, 5, 1, 4]);
+
+        $result = $queryEngine->avg();
+        expect($result)->toBe(4);
+    });
+
+    it('can not avg() non collection value with given key', function () {
+        $queryEngine = get_query_engine_instance();
+
+        $queryEngine->collect([7, 3, 6, 2, 5, 1, 4]);
+
+        $queryEngine->avg('age');
+    })->throws(\Nahid\QArray\Exceptions\InvalidArgumentException::class);
+
+    it('can not avg() collection of value without any given key', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $queryEngine->avg();
+    })->throws(\Nahid\QArray\Exceptions\KeyNotPresentException::class);
 });
 
 

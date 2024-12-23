@@ -274,7 +274,7 @@ class Clause
     protected function isCollection(array $data): bool
     {
         $firstKey = array_key_first($data);
-        return $data !== [] && (array_is_list($data) || (is_int($firstKey) && is_array($data[$firstKey])));
+        return $data !== [] && ((array_is_list($data) && is_array($data[0])) || (is_int($firstKey) && is_array($data[$firstKey])));
     }
 
     /**
