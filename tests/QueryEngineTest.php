@@ -827,3 +827,75 @@ describe('column()', function () {
     });
 
 });
+
+it('can toJson() of the collection data', function () {
+    $queryEngine = get_query_engine_instance();
+    $queryEngine->collect(get_mock_data());
+
+    $result = $queryEngine->toJson();
+    expect($result)->toBeString()
+        ->and($result)->toContain('foo')
+        ->and($result)->toContain('waldofoo');
+});
+
+it('can toArray() of the collection data', function () {
+    $queryEngine = get_query_engine_instance();
+    $queryEngine->collect(get_mock_data());
+
+    $result = $queryEngine->toArray();
+    expect($result)->toBeArray()
+        ->and($result)->toHaveCount(20)
+        ->and($result[0])->toMatchArray(['id' => 1, 'name' => 'foo'])
+        ->and($result[19])->toMatchArray(['id' => 20, 'name' => 'waldofoo']);
+});
+
+it('can get all keys() from the collection data', function () {
+    $queryEngine = get_query_engine_instance();
+    $queryEngine->collect(get_mock_data());
+
+    $result = $queryEngine->keys();
+
+    expect($result->raw())->toBeArray()
+        ->and($result)->toHaveCount(20)
+        ->and($result[0])->toBe(0)
+        ->and($result[19])->toBe(19);
+});
+
+it('can get all values() from the collection data', function () {
+    $queryEngine = get_query_engine_instance();
+    $queryEngine->collect(get_mock_data());
+
+    $result = $queryEngine->values();
+
+    expect($result->raw())->toBeArray()
+        ->and($result)->toHaveCount(20)
+        ->and($result[0])->toMatchArray(['id' => 1, 'name' => 'foo'])
+        ->and($result[19])->toMatchArray(['id' => 20, 'name' => 'waldofoo']);
+});
+
+describe('chunk()', function () {
+    it('can chunk() the collection data by given amount', function () {
+        $queryEngine = get_query_engine_instance();
+        $queryEngine->collect(get_mock_data());
+
+        $result = $queryEngine->chunk(5);
+        expect($result->raw())->toHaveCount(4)
+            ->and($result->raw()[0])->toHaveCount(5)
+            ->and($result->raw()[3])->toHaveCount(5);
+    });
+
+    it('can chunk() the collection data by given amount and process it with callback', function () {
+        $queryEngine = get_query_engine_instance();
+        $queryEngine->collect(get_mock_data());
+
+        $result = [];
+        $output = $queryEngine->chunk(5, function(QueryEngine $items) use (&$result) {
+            $result[] = $items->count();
+        });
+
+        expect($result)->toHaveCount(4)
+            ->and($result[0])->toBe(5)
+            ->and($result[3])->toBe(5)
+            ->and($output)->toBeNull();
+    });
+});

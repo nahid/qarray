@@ -838,26 +838,23 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
      *
      * @param int $amount
      * @param callable|null $fn
-     * @return array
+     * @return static
      */
-    public function chunk(int $amount, ?callable $fn = null): array
+    public function chunk(int $amount, ?callable $fn = null): ?static
     {
         $this->run();
 
-        $chunk_value = array_chunk($this->_data, $amount);
-        $chunks = [];
+        $this->_data = array_chunk($this->_data, $amount);
 
         if (!is_null($fn) && is_callable($fn)) {
-            foreach ($chunk_value as $chunk) {
-                $return = $fn($chunk);
-                if (!is_null($return)) {
-                    $chunks[] = $return;
-                }
+            foreach ($this as $chunk) {
+                $fn($chunk);
             }
-            return count($chunks) > 0 ? $chunks : [];
+
+            return null;
         }
 
-        return $chunk_value;
+        return $this->processOutput($this->_data);
     }
 
     /**
