@@ -214,15 +214,15 @@ class Clause
             return $this;
         }
 
-            $calculatedData = $this->processQuery();
-            if (!is_null($this->_take)) {
-                $calculatedData = array_slice($calculatedData, $this->_offset, $this->_take);
-            }
+        $calculatedData = $this->processQuery();
+        if (!is_null($this->_take)) {
+            $calculatedData = array_slice($calculatedData, $this->_offset, $this->_take);
+        }
 
-            $this->_data = $calculatedData;
+        $this->_data = $calculatedData;
 
-            $this->_isProcessed = true;
-            return $this;
+        $this->_isProcessed = true;
+        return $this;
 
     }
 
@@ -285,8 +285,6 @@ class Clause
      */
     public function from(string $node = '.'): static
     {
-        $this->_isProcessed = false;
-
         if ($node == '') {
             $node = '.';
         }

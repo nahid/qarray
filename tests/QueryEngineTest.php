@@ -520,7 +520,310 @@ describe('avg()', function () {
     })->throws(\Nahid\QArray\Exceptions\KeyNotPresentException::class);
 });
 
+describe('first()', function () {
+    it('can first() fetch the first row of the collection data', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->first();
+        expect($result)->toMatchArray(['id' => 1, 'name' => 'foo']);
+    });
+
+    it('can first() fetch the first row of the collection data with query results', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('age', '>', 30)->first();
+        expect($result)->toMatchArray(['id' => 4, 'name' => 'qux']);
+    });
+
+    it('can first() fetch the first row of the collection data with query results and specific columns', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('age', '>', 30)->first(['name']);
+        expect($result)->toMatchArray(['name' => 'qux'])
+            ->and($result)->not->toHaveKey('id');
+    });
+});
+
+describe('last()', function () {
+    it('can last() fetch the last row of the collection data', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->last();
+        expect($result)->toMatchArray(['id' => 20, 'name' => 'waldofoo']);
+    });
+
+    it('can last() fetch the last row of the collection data with query results', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('age', '<', 30)->last();
+        expect($result)->toMatchArray(['id' => 19, 'name' => 'graultgarply']);
+    });
+
+    it('can last() fetch the last row of the collection data with query results and specific columns', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('age', '<', 30)->last(['name']);
+        expect($result)->toMatchArray(['name' => 'graultgarply'])
+            ->and($result)->not->toHaveKey('id');
+    });
+});
 
 
+describe('nth()', function () {
+    it('can nth() fetch the nth position of row from the collection data', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->nth(3);
+        expect($result)->toMatchArray(['id' => 3, 'name' => 'baz']);
+    });
 
 
+    it('can nth() fetch the nth position of row from the collection data with query results', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('age', '>', 30)->nth(2);
+        expect($result)->toMatchArray(['id' => 10, 'name' => 'fred']);
+    });
+
+    it('can nth() fetch the last nth position of the collection data with query results and specific columns', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->where('age', '>', 30)->nth(2, ['name']);
+        expect($result)->toMatchArray(['name' => 'fred'])
+            ->and($result)->not->toHaveKey('id');
+    });
+
+    it('can nth() fetch the null value from the position which is greater than total items', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+
+        $queryEngine->collect($mockData);
+
+        $result = $queryEngine->nth(21);
+        expect($result)->toBeNull();
+    });
+
+});
+
+it('can sortBy the collection data with specific property', function () {
+    $queryEngine = get_query_engine_instance();
+    $mockData = get_mock_data();
+
+    $queryEngine->collect($mockData);
+
+    $result = $queryEngine->sortBy('age');
+    expect($result->raw())->toHaveCount(20)
+        ->and($result->raw()[0])->toMatchArray(['id' => 1, 'name' => 'foo'])
+        ->and($result->raw()[19])->toMatchArray(['id' => 15, 'name' => 'barbaz']);
+
+    $queryEngine->reset();
+
+    $result = $queryEngine->collect($mockData)->sortBy('age', 'desc');
+
+    expect($result->raw())->toHaveCount(20)
+        ->and($result->raw()[0])->toMatchArray(['id' => 15, 'name' => 'barbaz'])
+        ->and($result->raw()[19])->toMatchArray(['id' => 1, 'name' => 'foo']);
+});
+
+it('can sort() the data', function () {
+    $queryEngine = get_query_engine_instance();
+    $mockData = get_mock_data();
+
+    $queryEngine->collect($mockData);
+
+    $result = $queryEngine->sort();
+    expect($result->raw())->toHaveCount(20)
+        ->and($result->raw()[0])->toMatchArray(['id' => 1, 'name' => 'foo'])
+        ->and($result->raw()[19])->toMatchArray(['id' => 20, 'name' => 'waldofoo']);
+
+    $queryEngine->reset();
+
+    $result = $queryEngine->sort('desc');
+
+    expect($result->raw())->toHaveCount(20)
+        ->and($result->raw()[0])->toMatchArray(['id' => 20, 'name' => 'waldofoo'])
+        ->and($result->raw()[19])->toMatchArray(['id' => 1, 'name' => 'foo']);
+});
+
+it('can grab() the raw resultant data', function () {
+    $queryEngine = get_query_engine_instance();
+    $mockData = get_mock_data();
+
+    $queryEngine->collect($mockData);
+
+    $result = $queryEngine->where('id', 2)->first()->grab('meta.foo');
+    expect($result)->toBe('baz');
+});
+
+describe('each()', function() {
+    it('can each() iterate over all items in the collection', function () {
+        $queryEngine = get_query_engine_instance();
+        $mockData = get_mock_data();
+        $queryEngine->collect($mockData);
+
+        $result = [];
+        $queryEngine->where('id', '<=', 3)
+            ->each(function($val, $key) use (&$result) {
+                $result[] = $val['name'];
+            });
+
+        expect($result)->toHaveCount(3)
+            ->and($result)->toMatchArray([
+                'foo',
+                'bar',
+                'baz',
+            ]);
+    });
+
+    it('can each() handle an empty collection', function () {
+        $queryEngine = get_query_engine_instance();
+        $queryEngine->collect([]);
+
+        $result = [];
+        $queryEngine->each(function($val, $key) use (&$result) {
+            $result[] = $val;
+        });
+
+        expect($result)->toBeEmpty();
+    });
+});
+
+it('can transform() the data with a callable function', function () {
+    $queryEngine = get_query_engine_instance();
+    $queryEngine->collect([
+        ['id' => 1, 'name' => 'foo'],
+        ['id' => 2, 'name' => 'bar'],
+    ]);
+
+    $result = $queryEngine->transform(function ($val) {
+        $val['name'] = strtoupper($val['name']);
+        return $val;
+    });
+
+    expect($result->raw())->toMatchArray([
+        ['id' => 1, 'name' => 'FOO'],
+        ['id' => 2, 'name' => 'BAR'],
+    ]);
+});
+
+it('can map() the data with a callable function', function () {
+    $queryEngine = get_query_engine_instance();
+    $queryEngine->collect([
+        ['id' => 1, 'name' => 'foo'],
+        ['id' => 2, 'name' => 'bar'],
+    ]);
+
+    $result = $queryEngine->map(function ($key, $val) {
+        return ['new_id' => $val['id'], 'new_name' => strtoupper($val['name'])];
+    });
+
+    expect($result->raw())->toMatchArray([
+        ['new_id' => 1, 'new_name' => 'FOO'],
+        ['new_id' => 2, 'new_name' => 'BAR'],
+    ]);
+});
+
+describe('filter()', function() {
+    it('can filter() the data with a callable function', function () {
+        $queryEngine = get_query_engine_instance();
+        $queryEngine->collect(get_mock_data());
+
+        $result = $queryEngine->filter(function ($val) {
+            return $val['id'] <= 3;
+        });
+
+
+        expect($result->raw())->toHaveCount(3)
+            ->and($result->raw()[0])->toMatchArray(['id' => 1, 'name' => 'foo']);
+    });
+
+    it('can filter() the data with a callable function and keep indexes', function () {
+        $queryEngine = get_query_engine_instance();
+        $queryEngine->collect(get_mock_data());
+
+        $result = $queryEngine->filter(function ($val) {
+            return $val['id'] >= 16 && $val['id'] % 2 === 0;
+        }, true);
+
+
+        expect($result->raw())->toHaveCount(3)
+            ->and(array_keys($result->raw()))->toMatchArray([15, 17, 19]);
+    });
+});
+
+describe('implode()', function () {
+    it('can implode() from collection data by given key as string', function() {
+        $queryEngine = get_query_engine_instance();
+        $queryEngine->collect(get_mock_data());
+
+        $result = $queryEngine->implode('name', ', ');
+        $data = $result->raw();
+
+        expect($data)->toHaveKey('name')
+            ->and($data['name'])->toBeString()
+            ->and($data)->toHaveCount(1)
+        ->and($data['name'])->toBe('foo, bar, baz, qux, quux, corge, grault, garply, waldo, fred, plugh, xyzzy, thud, foobar, barbaz, bazqux, quuxquuz, corgegrault, graultgarply, waldofoo');
+    });
+
+    it('can implode() from collection data by given keys as array', function() {
+        $queryEngine = get_query_engine_instance();
+        $queryEngine->collect(get_mock_data());
+
+        $result = $queryEngine->implode(['name', 'age'], ', ');
+        $data = $result->raw();
+
+        expect($data)->toHaveKeys(['name', 'age'])
+            ->and($data)->toHaveCount(2)
+            ->and($data['age'])->toBe('20, 25, 30, 35, 22, 28, 26, 21, 27, 33, 29, 31, 34, 23, 37, 24, 32, 25, 22, 36');
+    });
+});
+
+describe('column()', function () {
+    it('can column() get specific key\'s value from collection', function () {
+        $queryEngine = get_query_engine_instance();
+        $queryEngine->collect(get_mock_data());
+
+        $result = $queryEngine->column('name');
+        expect($result->raw())->toHaveCount(20)
+            ->and($result->raw()[0])->toBe('foo')
+            ->and($result->raw()[19])->toBe('waldofoo');
+    });
+
+    it('can column() get specific key\'s value from collection using given key', function () {
+        $queryEngine = get_query_engine_instance();
+        $queryEngine->collect(get_mock_data());
+
+        $result = $queryEngine->column('age', 'name');
+        expect($result->raw())->toHaveCount(20)
+            ->and($result->raw()['foo'])->toBe(20)
+            ->and($result->raw()['waldofoo'])->toBe(36);
+    });
+
+});

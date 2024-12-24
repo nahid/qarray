@@ -484,8 +484,8 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     /**
      * getting first element of prepared data
      *
-     * @param array $columns
-     * @return QueryEngine|null
+     * @param ?array<string> $columns
+     * @return static|null
      */
     public function first(?array $columns = null): ?static
     {
@@ -495,9 +495,7 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
         $data = $this->_data;
 
         if (count($data) > 0) {
-            $data = $this->toArray();
-            $this->_data = reset($data);
-            return $this;
+            return $this->processOutput(reset($data));
         }
 
         return null;
@@ -527,20 +525,21 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
      * getting nth number of element of prepared data
      *
      * @param int $index
-     * @param array $columns
-     * @return QueryEngine|null
+     * @param ?array<string> $columns
+     * @return static|null
      */
     public function nth(int $index, ?array $columns = null): ?static
     {
         $this->setSelectColumns($columns);
         $this->run();
 
-        $data = $this->_data;
+        $data = $this->values();
 
-        $total_elm = count($data);
+
+        $totalItems = count($data);
         $idx =  abs($index);
 
-        if ($total_elm < $idx || $index == 0) {
+        if ($totalItems < $idx || $index == 0) {
             return null;
         }
 
@@ -598,7 +597,7 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
      */
     public function sort(string $order = 'asc'): static
     {
-        $this->_data = convert_to_array($this->_data);
+        $order = strtolower($order);
 
         if ($order == 'desc') {
             rsort($this->_data);
@@ -624,38 +623,6 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     }
 
     /**
-     * @param int $index
-     * @param string|null $column
-     * @return static|static|null
-     */
-    public function find(int $index, ?string $column = null): ?static
-    {
-        $this->run();
-
-        $data = array_values($this->_data);
-
-        if (array_is_list($data) && is_null($column) && isset($data[$index])) {
-            $this->_data = $data[$index];
-
-            return $this;
-        }
-
-        if (!$this->isCollection($data)) {
-            return null;
-        }
-
-        foreach ($data as $key => $val) {
-            if ($this->arrayGet($val, $column) == $index) {
-                $this->_data = $val;
-
-                return $this;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Get the raw data of result
      *
      * @return mixed
@@ -676,7 +643,7 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
         $this->run();
 
         foreach ($this->_data as $key => $val) {
-            $fn($key, $val);
+            $fn($val, $key);
         }
     }
 
@@ -715,24 +682,24 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
             $data[] = $fn($key, $val);
         }
 
-        return $this->processOutput($data);
+        return $this->processOutput($data, true);
     }
 
     /**
      * filtered each element of prepared data
      *
      * @param callable $fn
-     * @param bool $key
-     * @return QueryEngine
+     * @param bool $keepIndexes
+     * @return static
      */
-    public function filter(callable $fn, bool $key = false): static
+    public function filter(callable $fn, bool $keepIndexes = false): static
     {
         $this->run();
 
         $data = [];
         foreach ($this->_data as $k => $val) {
             if ($fn($val)) {
-                if ($key) {
+                if ($keepIndexes) {
                     $data[$k] = $val;
                 } else {
                     $data[] = $val;
@@ -752,6 +719,8 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     public function then(string $node = '.'): static
     {
         $this->run();
+        $this->_isProcessed = false;
+
         $this->from($node);
 
         return $this;

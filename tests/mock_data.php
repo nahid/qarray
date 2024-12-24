@@ -21,12 +21,12 @@ function get_mock_data(): array
         ['id' => 12, 'name' => 'xyzzy', 'age' => 31, 'is_active' => false, 'deleted_at' => null, 'created_at' => '2021-01-12 00:00:00', 'meta' => ['foo' => 'baz', 'baz' => 'quux']],
         ['id' => 13, 'name' => 'thud', 'age' => 34, 'is_active' => true, 'deleted_at' => '2023-02-01 00:00:00', 'created_at' => '2021-01-13 00:00:00', 'meta' => ['foo' => 'quux', 'baz' => 'bar']],
         ['id' => 14, 'name' => 'foobar', 'age' => 23, 'is_active' => true, 'deleted_at' => null, 'created_at' => '2021-01-14 00:00:00', 'meta' => ['foo' => 'bar', 'baz' => 'quux']],
-        ['id' => 15, 'name' => 'barbaz', 'age' => 36, 'is_active' => false, 'deleted_at' => null, 'created_at' => '2021-01-15 00:00:00', 'meta' => ['foo' => 'qux', 'baz' => 'foo']],
+        ['id' => 15, 'name' => 'barbaz', 'age' => 37, 'is_active' => false, 'deleted_at' => null, 'created_at' => '2021-01-15 00:00:00', 'meta' => ['foo' => 'qux', 'baz' => 'foo']],
         ['id' => 16, 'name' => 'bazqux', 'age' => 24, 'is_active' => true, 'deleted_at' => null, 'created_at' => '2021-01-16 00:00:00', 'meta' => ['foo' => 'baz', 'baz' => 'quux']],
         ['id' => 17, 'name' => 'quuxquuz', 'age' => 32, 'is_active' => true, 'deleted_at' => '2023-03-01 00:00:00', 'created_at' => '2021-01-17 00:00:00', 'meta' => ['foo' => 'quux', 'baz' => 'baz']],
         ['id' => 18, 'name' => 'corgegrault', 'age' => 25, 'is_active' => true, 'deleted_at' => null, 'created_at' => '2021-01-18 00:00:00', 'meta' => ['foo' => 'bar', 'baz' => 'qux']],
         ['id' => 19, 'name' => 'graultgarply', 'age' => 22, 'is_active' => false, 'deleted_at' => null, 'created_at' => '2021-01-19 00:00:00', 'meta' => ['foo' => 'qux', 'baz' => 'bar']],
-        ['id' => 20, 'name' => 'waldofoo', 'age' => 37, 'is_active' => true, 'deleted_at' => '2023-04-01 00:00:00', 'created_at' => '2021-01-20 00:00:00', 'meta' => ['foo' => 'baz', 'baz' => 'foo']],
+        ['id' => 20, 'name' => 'waldofoo', 'age' => 36, 'is_active' => true, 'deleted_at' => '2023-04-01 00:00:00', 'created_at' => '2021-01-20 00:00:00', 'meta' => ['foo' => 'baz', 'baz' => 'foo']],
     ];
 }
 
