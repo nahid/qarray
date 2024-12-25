@@ -861,10 +861,10 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
      * Pluck is the alias of column
      *
      * @param string $column
-     * @param null $key
-     * @return QueryEngine
+     * @param ?string $key
+     * @return static
      */
-    public function pluck(string $column, mixed $key = null): static
+    public function pluck(string $column, ?string $key = null): static
     {
         return $this->column($column, $key);
     }
@@ -872,27 +872,27 @@ abstract class QueryEngine extends Clause implements ArrayAccess, \Iterator, \Co
     /**
      * Array pop from current result set
      *
-     * @return QueryEngine
+     * @return static
      */
     public function pop(): static
     {
         $this->run();
         $data = array_pop($this->_data);
 
-        return $this->processOutput($data);
+        return $this->processOutput($data, true);
     }
 
     /**
      * Array shift from current result set
      *
-     * @return QueryEngine
+     * @return static
      */
     public function shift(): static
     {
         $this->run();
         $data = array_shift($this->_data);
 
-        return $this->processOutput($data);
+        return $this->processOutput($data, true);
     }
 
     /**

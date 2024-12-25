@@ -899,3 +899,32 @@ describe('chunk()', function () {
             ->and($output)->toBeNull();
     });
 });
+
+it('can pop() the first elements from collection', function () {
+    $queryEngine = get_query_engine_instance();
+    $queryEngine->collect(get_mock_data());
+
+    $result = $queryEngine->pop();
+    expect($result->raw())->toMatchArray(['id' => 20, 'name' => 'waldofoo'])
+        ->and($queryEngine->raw())->toHaveCount(19);
+});
+
+it('can shift() the first elements from collection', function () {
+    $queryEngine = get_query_engine_instance();
+    $queryEngine->collect(get_mock_data());
+
+    $result = $queryEngine->shift();
+    expect($result->raw())->toMatchArray(['id' => 1, 'name' => 'foo'])
+        ->and($queryEngine->raw())->toHaveCount(19);
+});
+
+it('can push() the elements to the collection', function () {
+    $queryEngine = get_query_engine_instance();
+    $queryEngine->collect(get_mock_data());
+
+    $queryEngine->push(['id' => 21, 'name' => 'pushbar']);
+    $result = $queryEngine->raw();
+
+    expect($result)->toHaveCount(21)
+        ->and($result[20])->toMatchArray(['id' => 21, 'name' => 'pushbar']);
+});
