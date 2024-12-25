@@ -162,7 +162,7 @@ it('can exists() check the data existence', function () {
     ]);
 
     expect($queryEngine->where('id', 2)->exists())->toBeTrue("It should return true")
-        ->and($queryEngine->where('id', 4)->exists())->toBeFalse("It should return false");
+        ->and($queryEngine->reProcess()->where('id', 4)->exists())->toBeFalse("It should return false");
 
 });
 

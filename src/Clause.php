@@ -6,16 +6,8 @@ namespace Nahid\QArray;
 
 use Nahid\QArray\Exceptions\ConditionNotAllowedException;
 use Nahid\QArray\Parsers\AstParser;
-use Nahid\QArray\Parsers\NodeVisitor;
-use function DeepCopy\deep_copy;
 
-/**
- * Class Clause
- * @template TKey as array-key
- * @template TValue
- * @package Nahid\QArray
- */
-class Clause
+abstract class Clause
 {
     /**
      * store node path
@@ -24,40 +16,16 @@ class Clause
     protected string $_node = '';
 
     /**
-     * contain prepared data for process
-     * @var array<TKey, TValue>
-     */
-    protected array $_data;
-
-    /**
      * contains column names
      * @var array<string, mixed>
      */
     protected array $_select = [];
 
     /**
-     * @var int
-     */
-    protected int $_offset = 0;
-
-    /**
-     * @var ?int
-     */
-    protected ?int $_take = null;
-
-
-    /**
      * contains column names for except
      * @var array<string, mixed>
      */
     protected array $_except = [];
-
-    /**
-     * Stores base contents.
-     *
-     * @var array<string, mixed>
-     */
-    protected array $_original = [];
 
     /**
      * Stores all conditions.
@@ -67,18 +35,12 @@ class Clause
     protected array $_conditions = [];
 
     /**
-     * @var bool
-     */
-    protected bool $_isProcessed = false;
-
-    /**
      * @var string
      */
     protected string $_traveler = '.';
 
-    protected readonly Options $options;
 
-    protected readonly AstParser $parser;
+    protected AstParser $parser;
 
     /**
      * map all conditions with methods
@@ -121,122 +83,12 @@ class Clause
         'bool' => 'isBool',
     ];
 
-    /**
-     * @param Options|null $options
-     */
-    public function __construct(?Options $options = null)
-    {
-        if (is_null($options)) {
-            $options = new Options();
-        }
-
-        $this->options = $options;
-
-        $this->setTraveler($this->options->traveler);
-
-        $func = Func::class;
-        if (!is_null($this->options->func) && class_exists($this->options->func)) {
-            $func = $this->options->func;
-        }
-
-        $this->parser = new AstParser(new NodeVisitor($func));
-
-    }
-
-    public function reset(array $data = [], array $props = [], bool $instance = false): static
-    {
-        if ($data === []) {
-            $data = deep_copy($this->_original);
-        }
-
-        if ($instance) {
-            $static = new static();
-            $static->collect($data);
-            $static->resetProps($props);
-
-            return $static;
-        }
-
-        $this->resetProps($props);
-        $this->collect($data);
-
-        return $this;
-    }
-
-    /**
-     * reset all properties
-     *
-     * @param array<string> $props
-     */
-    public function resetProps(array $props = []): void
-    {
-            $this->_select = $props['_select'] ?? [];
-            $this->_isProcessed = $props['_isProcessed'] ?? false;
-            $this->_node = $props['_node'] ?? '';
-            $this->_except = $props['_except'] ?? [];
-            $this->_conditions = $props['_conditions'] ?? [];
-            $this->_take = $props['_take'] ?? null;
-            $this->_offset = $props['_offset'] ?? 0;
-            $this->setTraveler($this->options->traveler);
-    }
 
     /**
      * @param array<string, mixed> $props
      * @return static
      */
 
-
-    /**
-     * import parsed data from raw json
-     *
-     * @param array<int, array<TKey, TValue>> $data
-     * @return static
-     */
-    public function collect(array $data): static
-    {
-        $this->reProcess();
-
-        $this->_data = $data;
-        $this->_original = deep_copy($data);
-
-        return $this;
-    }
-
-
-    /**
-     * Prepare data from desire conditions
-     *
-     * @return static
-     */
-    protected function run(): static
-    {
-        if ($this->_isProcessed) {
-            return $this;
-        }
-
-        $calculatedData = $this->processQuery();
-        if (!is_null($this->_take)) {
-            $calculatedData = array_slice($calculatedData, $this->_offset, $this->_take);
-        }
-
-        $this->_data = $calculatedData;
-
-        $this->_isProcessed = true;
-        return $this;
-
-    }
-
-    /**
-     * Our system will cache processed data and prevend multiple time processing. If
-     * you want to reprocess this method can help you
-     *
-     * @return static
-     */
-    public function reProcess(): static
-    {
-        $this->_isProcessed = false;
-        return $this;
-    }
 
     /**
      * Parse object to array
@@ -401,32 +253,6 @@ class Clause
         }
     }
 
-    /**
-     * Set offset value for slice of array
-     *
-     * @param int $offset
-     * @return static
-     */
-    public function offset(int $offset): static
-    {
-        $this->_offset = $offset;
-
-        return $this;
-    }
-
-    /**
-     * Set taken value for slice of array
-     *
-     * @param int $take
-     * @return static
-     */
-    public function take(int $take): static
-    {
-        $this->_take = $take;
-
-        return $this;
-    }
-
 
     /**
      * select desired column for except
@@ -444,29 +270,6 @@ class Clause
     }
 
 
-    /**
-     * Prepare data for result
-     *
-     * @param mixed $data
-     * @param bool $instance
-     * @return static
-     */
-    protected function processOutput(mixed $data, bool $instance = false): static
-    {
-        if (!$instance || !is_array($data)) {
-            $this->_data = $data;
-            return $this;
-        }
-
-        /*
-        foreach ($data as $key => $val) {
-            $output[$key] = $this->generateResultData($val);
-        }*/
-
-
-
-        return $this->reset($data, ['_select' => $this->_select, '_except' => $this->_except], true);
-    }
 
     /**
      * Set traveler delimiter
@@ -519,63 +322,6 @@ class Clause
         }
 
         return $items;
-    }
-    /**
-     * get data from node path
-     *
-     * @return mixed
-     */
-    protected function getData(): mixed
-    {
-        return $this->arrayGet($this->_data, $this->_node);
-    }
-
-    /**
-     * Process the given queries
-     *
-     * @return array|null
-     * @throws ConditionNotAllowedException
-     */
-    protected function processQuery(): ?array
-    {
-        $_data = $this->getData();
-        $conditions = $this->_conditions;
-
-        $hasConditions = count($conditions) > 0;
-        $hasCollection = $this->isCollection($_data);
-        $hasSelect = count($this->_select) > 0;
-
-        if ($hasConditions && !$hasCollection) {
-            throw new ConditionNotAllowedException('Conditions not allowed without collection');
-        }
-
-        /*return array_filter($data, function ($data) use ($conditions) {
-            return $this->applyConditions($conditions, $data);
-        });*/
-
-        $result = [];
-        if (!is_array($_data)) return null;
-
-        if ($hasCollection && $hasConditions) {
-            foreach ($_data as $key => $data) {
-                $keep = $this->applyConditions($conditions, $data);
-                if ($keep) {
-                    $result[$key] = $this->takeColumn($data);
-                }
-            }
-
-            return $result;
-        }
-
-        if (!$hasConditions && $hasCollection) {
-            foreach ($_data as $key => $data) {
-                $result[$key] = $this->takeColumn($data);
-            }
-
-            return $result;
-        }
-
-        return $this->takeColumn($_data);
     }
 
     /**
@@ -784,7 +530,6 @@ class Clause
         ];
 
         $this->_conditions[$index] = $current;
-        $this->_isProcessed = false;
 
         return $this;
     }
